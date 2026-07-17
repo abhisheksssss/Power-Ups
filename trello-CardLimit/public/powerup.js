@@ -1,3 +1,5 @@
+console.log("Power-Up loaded!");
+console.log(window.TrelloPowerUp);
 window.TrelloPowerUp.initialize({
 
   'list-actions': function (t) {
