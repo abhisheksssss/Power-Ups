@@ -1,5 +1,5 @@
-console.log("Power-Up loaded!");
-console.log(window.TrelloPowerUp);
+var BASE_URL = 'https://power-ups-dvon.vercel.app';
+
 window.TrelloPowerUp.initialize({
 
   'list-actions': function (t) {
@@ -10,7 +10,7 @@ window.TrelloPowerUp.initialize({
           callback: function (t) {
             return t.popup({
               title: 'Set List Limit',
-              url: '/index.html?page=list-settings',
+              url: BASE_URL + '/index.html?page=list-settings',
               height: 280
             });
           }
@@ -22,7 +22,7 @@ window.TrelloPowerUp.initialize({
             callback: function (t) {
               return t.popup({
                 title: 'Warning',
-                url: '/index.html?page=warning-popup',
+                url: BASE_URL + '/index.html?page=warning-popup',
                 height: 380
               });
             }
@@ -61,7 +61,7 @@ window.TrelloPowerUp.initialize({
             callback: function(t) {
               return t.popup({
                 title: 'Warning',
-                url: '/index.html?page=warning-popup',
+                url: BASE_URL + '/index.html?page=warning-popup',
                 height: 380
               });
             }
