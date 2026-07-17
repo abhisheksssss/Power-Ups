@@ -1,4 +1,7 @@
+console.log("Power Up is Added and Running")
 var BASE_URL = 'https://power-ups-dvon.vercel.app';
+
+
 
 window.TrelloPowerUp.initialize({
 
