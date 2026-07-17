@@ -22,7 +22,7 @@ export function ListSettings() {
         setListName(list.name);
         setCardCount(list.cards.length);
         
-        t.get(list.id, 'shared', 'limit').then((savedLimit: number) => {
+        t.get('list', 'shared', 'limit').then((savedLimit: number) => {
           if (savedLimit) {
             setLimit(savedLimit);
           }
@@ -33,17 +33,15 @@ export function ListSettings() {
 
   const handleSave = () => {
     if (!t) return;
-    t.list('id').then((list: any) => {
-      if (limit > 0) {
-        t.set(list.id, 'shared', 'limit', limit).then(() => {
-          t.closePopup();
-        });
-      } else {
-        t.remove(list.id, 'shared', 'limit').then(() => {
-          t.closePopup();
-        });
-      }
-    });
+    if (limit > 0) {
+      t.set('list', 'shared', 'limit', limit).then(() => {
+        t.closePopup();
+      });
+    } else {
+      t.remove('list', 'shared', 'limit').then(() => {
+        t.closePopup();
+      });
+    }
   };
 
   const increase = () => setLimit((l: number) => l + 1);

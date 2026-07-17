@@ -1,13 +1,12 @@
-console.log("Power Up is Added and Running")
 var BASE_URL = 'https://power-ups-dvon.vercel.app';
-
-
 
 window.TrelloPowerUp.initialize({
 
   'list-actions': function (t) {
-    return t.list('id', 'name', 'cards').then(function (list) {
-      return t.get(list.id, 'shared', 'limit').then(function(limit) {
+    // t.get('list', ...) is the correct scope — NOT t.get(list.id, ...)
+    return t.get('list', 'shared', 'limit').then(function(limit) {
+      return t.list('id', 'cards').then(function(list) {
+        var cardCount = list.cards.length;
         var actions = [{
           text: 'Set List Limit',
           callback: function (t) {
@@ -18,8 +17,8 @@ window.TrelloPowerUp.initialize({
             });
           }
         }];
-        
-        if (limit && list.cards.length > limit) {
+
+        if (limit && cardCount > limit) {
           actions.unshift({
             text: '⚠️ Capacity Exceeded',
             callback: function (t) {
@@ -35,28 +34,30 @@ window.TrelloPowerUp.initialize({
       });
     });
   },
-  'card-badges': function (t, opts) {
-    return t.list('id', 'cards').then(function(list) {
-      return t.get(list.id, 'shared', 'limit').then(function(limit) {
-        if (!limit) return [];
-        
-        const cardCount = list.cards.length;
-        const percentage = limit > 0 ? (cardCount / limit) * 100 : 0;
-        
+
+  'card-badges': function (t) {
+    return t.get('list', 'shared', 'limit').then(function(limit) {
+      if (!limit) return [];
+      return t.list('id', 'cards').then(function(list) {
+        var cardCount = list.cards.length;
+        var percentage = limit > 0 ? (cardCount / limit) * 100 : 0;
+
         if (percentage >= 100) {
-          return [{ text: `${cardCount}/${limit} Limit Exceeded`, color: 'red' }];
+          return [{ text: cardCount + '/' + limit + ' Limit Exceeded', color: 'red' }];
         } else if (percentage >= 70) {
-          return [{ text: `${cardCount}/${limit} Nearing Limit`, color: 'yellow' }];
+          return [{ text: cardCount + '/' + limit + ' Nearing Limit', color: 'yellow' }];
         } else {
-          return [{ text: `${cardCount}/${limit} Cards`, color: 'green' }];
+          return [{ text: cardCount + '/' + limit + ' Cards', color: 'green' }];
         }
       });
     });
   },
-  'card-detail-badges': function (t, opts) {
-    return t.list('id', 'cards').then(function(list) {
-      return t.get(list.id, 'shared', 'limit').then(function(limit) {
-        if (limit && list.cards.length > limit) {
+
+  'card-detail-badges': function (t) {
+    return t.get('list', 'shared', 'limit').then(function(limit) {
+      if (!limit) return [];
+      return t.list('id', 'cards').then(function(list) {
+        if (list.cards.length > limit) {
           return [{
             title: 'List Capacity',
             text: 'Exceeded!',
