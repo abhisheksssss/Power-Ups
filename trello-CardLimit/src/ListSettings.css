@@ -1,0 +1,210 @@
+.list-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #c7d1db; /* Trello dark mode text color */
+}
+
+/* Base styles are inheriting from index.css, assuming dark theme for popover */
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-details h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b6c2cf;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+.status-text {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.stats-section {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-section label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.number-input {
+  display: flex;
+  align-items: center;
+  background: #22272b;
+  border: 1px solid #738496;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.number-input button {
+  background: transparent;
+  border: none;
+  color: #b6c2cf;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.number-input button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.number-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+/* Chrome, Safari, Edge, Opera hide arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.helper-text {
+  font-size: 12px;
+  color: #8c9bab;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.save-button {
+  background: #579dff;
+  color: #1d2125;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-button:hover {
+  background: #85b8ff;
+}
+
+.warning-banner {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.warning-text {
+  font-size: 14px;
+  color: #c7d1db;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.actionable-suggestions {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.suggestions-title {
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+}
+
+.actionable-suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionable-suggestions li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  color: #c7d1db;
+  line-height: 1.4;
+}
+
+.actionable-suggestions li svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
