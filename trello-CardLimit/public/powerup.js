@@ -20,7 +20,7 @@ window.TrelloPowerUp.initialize({
               return t.popup({
                 title: "Set List Limit",
                 url: BASE_URL + "/list-settings.html",
-                height: 280
+                height: 380
               });
             }
           }
@@ -52,7 +52,7 @@ window.TrelloPowerUp.initialize({
             return t.popup({
               title: "Set List Limit",
               url: BASE_URL + "/list-settings.html",
-              height: 280
+              height: 380
             });
           }
         }
