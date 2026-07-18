@@ -321,45 +321,28 @@
     });
 
     document.getElementById('saveBtn').addEventListener('click', function () {
-      if (limitVal > 0) {
-        document.getElementById("saveBtn").addEventListener("click", function () {
+      console.log("Saving:", limitVal);
 
-    console.log("Saving:", limitVal);
+      const action = limitVal > 0
+        ? t.set("board", "shared", "limit_" + listId, limitVal)
+        : t.remove("board", "shared", "limit_" + listId);
 
-    const action =
-        limitVal > 0
-            ? t.set("board", "shared", "limit_" + listId, limitVal)
-            : t.remove("board", "shared", "limit_" + listId);
-
-    action
+      action
         .then(function () {
-            console.log("Saved successfully");
-            return t.get("board", "shared", "limit_" + listId);
+          console.log("Saved successfully");
+          return t.get("board", "shared", "limit_" + listId);
         })
         .then(function (saved) {
-
-            console.log("Read back:", saved);
-
-            t.closePopup();
-
+          console.log("Read back:", saved);
+          t.closePopup();
         })
         .catch(function (err) {
-
-            console.error("Save failed:", err);
-
-            t.alert({
-                message: "Failed to save limit",
-                duration: 5
-            });
-
+          console.error("Save failed:", err);
+          t.alert({
+            message: "Failed to save limit",
+            duration: 5
+          });
         });
-
-});
-      } else {
-        t.remove('list', 'shared', 'limit').then(function () {
-          t.closePopup();
-        });
-      }
     });
   </script>
   </div>
