@@ -3,14 +3,19 @@ var BASE_URL = 'https://power-ups-dvon.vercel.app';
 console.log("Set List Limit setUp")
 
 window.TrelloPowerUp.initialize({
-  "board-buttons": function () {
-    console.log("Board buttons working");
-    return [];
-  },
+  "list-actions": function (t) {
+    console.log("LIST ACTIONS CALLED");
 
-  "list-actions": function () {
-    console.log("List actions working");
-    return [];
+    return [
+      {
+        text: "Hello World",
+        callback: function (t) {
+          return t.alert({
+            message: "Hello"
+          });
+        }
+      }
+    ];
   }
 });
 
