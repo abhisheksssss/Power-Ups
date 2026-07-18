@@ -152,7 +152,7 @@
         var cardCount = list.cards ? list.cards.length : 0;
         document.getElementById('countSpan').textContent = cardCount;
 
-        t.get('list', 'shared', 'limit').then(function (limit) {
+        t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
           document.getElementById('limitSpan').textContent = limit || '—';
           // Resize to fit content after data loads
           t.sizeTo('#container').catch(function () {});

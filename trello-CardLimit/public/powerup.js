@@ -10,7 +10,7 @@ window.TrelloPowerUp.initialize({
 
     // Use promise to check limit, but always return at least the Set Card Limit action
     return t.list('id', 'cards').then(function (list) {
-      return t.get('list', 'shared', 'limit').then(function (limit) {
+      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
         var cardCount = list.cards ? list.cards.length : 0;
 
         var actions = [
@@ -62,9 +62,9 @@ window.TrelloPowerUp.initialize({
 
   // ─── CARD BADGES: shows limit status on each card ──────────────────────────
   "card-badges": function (t) {
-    return t.get('list', 'shared', 'limit').then(function (limit) {
-      if (!limit) return [];
-      return t.list('id', 'cards').then(function (list) {
+    return t.list('id', 'cards').then(function (list) {
+      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+        if (!limit) return [];
         var cardCount = list.cards ? list.cards.length : 0;
         var lim = parseInt(limit, 10);
         var pct = (cardCount / lim) * 100;
@@ -78,34 +78,11 @@ window.TrelloPowerUp.initialize({
     }).catch(function () { return []; });
   },
 
-  // ─── LIST BADGES: shows counter in list header (if supported) ───────────────
-  "list-badges": function (t) {
-    return t.get('list', 'shared', 'limit').then(function (limit) {
-      if (!limit) {
-        return [{ text: 'No limit', color: null, refresh: 60 }];
-      }
-      return t.list('id', 'cards').then(function (list) {
-        var cardCount = list.cards ? list.cards.length : 0;
-        var lim = parseInt(limit, 10);
-        var pct = (cardCount / lim) * 100;
-        var color = "green";
-        if (pct >= 100) color = "red";
-        else if (pct >= 70) color = "yellow";
-        
-        return [{
-          text: cardCount + " / " + lim,
-          color: color,
-          refresh: 10
-        }];
-      });
-    }).catch(function () { return []; });
-  },
-
   // ─── CARD DETAIL BADGES: badge on open card when limit exceeded ─────────────
   "card-detail-badges": function (t) {
-    return t.get('list', 'shared', 'limit').then(function (limit) {
-      if (!limit) return [];
-      return t.list('id', 'cards').then(function (list) {
+    return t.list('id', 'cards').then(function (list) {
+      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+        if (!limit) return [];
         var cardCount = list.cards ? list.cards.length : 0;
         var lim = parseInt(limit, 10);
         if (cardCount >= lim) {

@@ -261,7 +261,7 @@
         cardCount = list.cards ? list.cards.length : 0;
         document.getElementById('listName').textContent = list.name;
 
-        return t.get('list', 'shared', 'limit').then(function (saved) {
+        return t.get('board', 'shared', 'limit_' + list.id).then(function (saved) {
           limitVal = saved ? parseInt(saved, 10) : 0;
           updateUI();
         });
@@ -285,9 +285,39 @@
 
     document.getElementById('saveBtn').addEventListener('click', function () {
       if (limitVal > 0) {
-        t.set('list', 'shared', 'limit', limitVal).then(function () {
-          t.closePopup();
+        document.getElementById("saveBtn").addEventListener("click", function () {
+
+    console.log("Saving:", limitVal);
+
+    const action =
+        limitVal > 0
+            ? t.set("board", "shared", "limit_" + listId, limitVal)
+            : t.remove("board", "shared", "limit_" + listId);
+
+    action
+        .then(function () {
+            console.log("Saved successfully");
+            return t.get("board", "shared", "limit_" + listId);
+        })
+        .then(function (saved) {
+
+            console.log("Read back:", saved);
+
+            t.closePopup();
+
+        })
+        .catch(function (err) {
+
+            console.error("Save failed:", err);
+
+            t.alert({
+                message: "Failed to save limit",
+                duration: 5
+            });
+
         });
+
+});
       } else {
         t.remove('list', 'shared', 'limit').then(function () {
           t.closePopup();
