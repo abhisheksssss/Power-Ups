@@ -11,9 +11,8 @@
       background: #fff;
       color: #172B4D;
       padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      height: auto;
+      overflow: hidden;
     }
 
     .title-bar {
@@ -35,7 +34,6 @@
 
     .body {
       padding: 14px 16px;
-      flex: 1;
     }
 
     .message {
@@ -151,6 +149,8 @@
 
         t.get('list', 'shared', 'limit').then(function (limit) {
           document.getElementById('limitSpan').textContent = limit || '—';
+          // Resize to fit content after data loads
+          t.sizeTo('body').catch(function () {});
         });
       });
     });

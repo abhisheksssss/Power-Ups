@@ -11,7 +11,8 @@
       background: #fff;
       color: #172B4D;
       padding: 16px;
-      min-height: 100vh;
+      height: auto;
+      overflow: hidden;
     }
 
     .header {
@@ -200,6 +201,10 @@
       return '#22c55e';
     }
 
+    function sizeToContent() {
+      t.sizeTo('body').catch(function () {});
+    }
+
     function updateUI() {
       var pct = limitVal > 0 ? Math.min(100, (cardCount / limitVal) * 100) : 0;
       var color = getColor(pct);
@@ -227,6 +232,9 @@
         document.getElementById('statusText').textContent  = 'No limit set';
         document.getElementById('statusText').style.color  = '#94a3b8';
       }
+
+      // Resize iframe to match new content height
+      sizeToContent();
     }
 
     t.render(function () {
