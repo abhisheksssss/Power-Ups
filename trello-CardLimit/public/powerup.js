@@ -3,10 +3,12 @@ var BASE_URL = 'https://power-ups-dvon.vercel.app';
 window.TrelloPowerUp.initialize({
 
   'list-actions': function (t) {
-    // t.get('list', ...) is the correct scope — NOT t.get(list.id, ...)
-    return t.get('list', 'shared', 'limit').then(function(limit) {
-      return t.list('id', 'cards').then(function(list) {
-        var cardCount = list.cards.length;
+    console.log("Trello called list-actions!");
+    
+    return t.list('id', 'cards').then(function(list) {
+      return t.get('list', 'shared', 'limit').then(function(limit) {
+        console.log("List limit fetched:", limit);
+        var cardCount = list.cards ? list.cards.length : 0;
         var actions = [{
           text: 'Set List Limit',
           callback: function (t) {
@@ -31,7 +33,23 @@ window.TrelloPowerUp.initialize({
           });
         }
         return actions;
+      }).catch(function(err) {
+        console.error("Error in list-actions t.get:", err);
+        // Fallback: still show the button even if get fails
+        return [{
+          text: 'Set List Limit',
+          callback: function (t) {
+            return t.popup({
+              title: 'Set List Limit',
+              url: BASE_URL + '/index.html?page=list-settings',
+              height: 280
+            });
+          }
+        }];
       });
+    }).catch(function(err) {
+        console.error("Error in list-actions t.list:", err);
+        return [];
     });
   },
 
