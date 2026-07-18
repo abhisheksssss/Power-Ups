@@ -6,91 +6,68 @@ window.TrelloPowerUp.initialize({
 
   // ─── LIST ACTIONS: "Set Card Limit" in the … menu ──────────────────────────
   "list-actions": function (t) {
-    console.log("LIST ACTIONS CALLED");
 
-    // Use promise to check limit, but always return at least the Set Card Limit action
-    return t.list('id', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+  return t.list("id", "cards").then(function (list) {
+
+    return t.get("board", "shared", "limit_" + list.id)
+      .then(function (limit) {
+
         var cardCount = list.cards ? list.cards.length : 0;
 
-        var actions = [
-          {
-            text: "Set Card Limit",
-            callback: function (t) {
+        return [{
+          text: "Set Card Limit",
+          callback: function (t) {
+
+            // No limit set → Open settings
+            if (!limit) {
               return t.popup({
-                title: "Set List Limit",
+                title: "Set Card Limit",
                 url: BASE_URL + "/list-settings.html",
                 height: 380
               });
             }
-          }
-        ];
 
-        return actions;
-      });
-    }).catch(function (err) {
-      console.error("list-actions error:", err);
-      // Fallback: always show the basic button
-      return [
-        {
-          text: "Set Card Limit",
-          callback: function (t) {
-            return t.popup({
-              title: "Set List Limit",
-              url: BASE_URL + "/list-settings.html",
-              height: 280
-            });
-          }
-        }
-      ];
-    });
-  },
+            var lim = parseInt(limit, 10);
 
-  // ─── LIST BADGES: shows counter in list header (if supported) & handles auto-alerts ─
-  "list-badges": function (t) {
-    return t.list('id', 'name', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
-        if (!limit) {
-          return [{ text: 'No limit', color: null, refresh: 60 }];
-        }
-        var cardCount = list.cards ? list.cards.length : 0;
-        var lim = parseInt(limit, 10);
-        var pct = (cardCount / lim) * 100;
-        var color = "green";
-        if (pct >= 100) color = "red";
-        else if (pct >= 70) color = "yellow";
-        
-        // --- AUTO-POPUP TRACKING LOGIC ---
-        // We use 'private' scope so this tracking is local to the current user
-        t.get('board', 'private', 'violation_' + list.id).then(function(hasWarned) {
-          if (cardCount > lim) {
-            if (!hasWarned) {
-              // Trigger modal automatically and set flag to prevent loop
-              t.modal({
-                title: "Capacity Exceeded!",
-                url: BASE_URL + "/warning-popup.html",
-                height: 380,
-                fullscreen: false
+            // Limit exceeded → Show warning first
+            if (cardCount >= lim) {
+              return t.popup({
+                title: "⚠ Capacity Exceeded",
+                url: BASE_URL +
+                  "/warning-popup.html?listId=" +
+                  encodeURIComponent(list.id),
+                height: 380
               });
-              t.set('board', 'private', 'violation_' + list.id, true);
             }
-          } else {
-            // Back under limit, reset the flag so they get warned next time it violates
-            if (hasWarned) {
-              t.remove('board', 'private', 'violation_' + list.id);
-            }
-          }
-        }).catch(function(err) {
-          console.error("Violation tracking error:", err);
-        });
 
-        return [{
-          text: cardCount + " / " + lim,
-          color: color,
-          refresh: 10
+            // Otherwise open settings
+            return t.popup({
+              title: "Set Card Limit",
+              url: BASE_URL + "/list-settings.html",
+              height: 380
+            });
+
+          }
         }];
+
       });
-    }).catch(function () { return []; });
+
+  }).catch(function (err) {
+
+    console.error(err);
+
+    return [{
+      text: "Set Card Limit",
+      callback: function (t) {
+        return t.popup({
+          title: "Set Card Limit",
+          url: BASE_URL + "/list-settings.html",
+          height: 380
+        });
+      }
+    }];
+
+  });
   },
 
   // ─── CARD BADGES: shows limit status on each card ──────────────────────────
