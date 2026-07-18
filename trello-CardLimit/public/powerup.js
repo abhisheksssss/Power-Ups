@@ -72,55 +72,60 @@ window.TrelloPowerUp.initialize({
 
   // ─── CARD BADGES: shows limit status on each card ──────────────────────────
   "card-badges": function (t) {
-    return [{
-      dynamic: function() {
-        return t.list('id', 'cards').then(function (list) {
-          return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
-            if (!limit) return { text: '', refresh: 3600 }; // Return empty badge if no limit
-            var cardCount = list.cards ? list.cards.length : 0;
-            var lim = parseInt(limit, 10);
-            var pct = (cardCount / lim) * 100;
-            if (pct >= 100) {
-              return { text: cardCount + "/" + lim + " Exceeded", color: "red", refresh: 1 };
-            } else if (pct >= 70) {
-              return { text: cardCount + "/" + lim + " Nearing", color: "yellow", refresh: 1 };
-            }
-            return { text: cardCount + "/" + lim, color: "green", refresh: 1 };
-          });
-        }).catch(function () { return { text: '', refresh: 3600 }; });
-      }
-    }];
+    return t.list('id', 'cards').then(function (list) {
+      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+        if (!limit) return [];
+        var cardCount = list.cards ? list.cards.length : 0;
+        var lim = parseInt(limit, 10);
+        var pct = (cardCount / lim) * 100;
+        var text = cardCount + "/" + lim;
+        if (pct >= 100) {
+          color = "red";
+          text += " Exceeded";
+        } else if (pct >= 70) {
+          color = "yellow";
+          text += " Nearing";
+        }
+        
+        // --- INSTANT GLOBAL REFRESH TRICK ---
+        // When card count changes, trigger a global board update to refresh all cards instantly
+        t.get('board', 'private', 'count_' + list.id).then(function(prevCount) {
+          if (prevCount !== cardCount) {
+            t.set('board', 'private', 'count_' + list.id, cardCount).then(function() {
+              t.set('board', 'private', 'force_refresh', Date.now());
+            });
+          }
+        });
+        
+        return [{ text: text, color: color }];
+      });
+    }).catch(function () { return []; });
   },
 
   // ─── CARD DETAIL BADGES: badge on open card when limit exceeded ─────────────
   "card-detail-badges": function (t) {
-    return [{
-      dynamic: function() {
-        return t.list('id', 'cards').then(function (list) {
-          return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
-            if (!limit) return { text: '', refresh: 3600 };
-            var cardCount = list.cards ? list.cards.length : 0;
-            var lim = parseInt(limit, 10);
-            if (cardCount >= lim) {
-              return {
-                title: "List Capacity",
-                text: "Exceeded! (" + cardCount + "/" + lim + ")",
-                color: "red",
-                refresh: 1,
-                callback: function (t) {
-                  return t.popup({
-                    title: "Capacity Exceeded",
-                    url: BASE_URL + "/warning-popup.html",
-                    height: 380
-                  });
-                }
-              };
+    return t.list('id', 'cards').then(function (list) {
+      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+        if (!limit) return [];
+        var cardCount = list.cards ? list.cards.length : 0;
+        var lim = parseInt(limit, 10);
+        if (cardCount >= lim) {
+          return [{
+            title: "List Capacity",
+            text: "Exceeded! (" + cardCount + "/" + lim + ")",
+            color: "red",
+            callback: function (t) {
+              return t.popup({
+                title: "Capacity Exceeded",
+                url: BASE_URL + "/warning-popup.html",
+                height: 380
+              });
             }
-            return { text: '', refresh: 3600 };
-          });
-        }).catch(function () { return { text: '', refresh: 3600 }; });
-      }
-    }];
+          }];
+        }
+        return [];
+      });
+    }).catch(function () { return []; });
   }
 
 });
