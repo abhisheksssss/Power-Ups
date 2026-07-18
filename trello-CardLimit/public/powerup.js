@@ -85,6 +85,8 @@ window.TrelloPowerUp.initialize({
         } else if (pct >= 70) {
           color = "yellow";
           text += " Nearing";
+        } else if(pct<70){
+          color = "green";
         }
         
         // --- INSTANT GLOBAL REFRESH TRICK ---
