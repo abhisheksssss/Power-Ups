@@ -26,20 +26,6 @@ window.TrelloPowerUp.initialize({
           }
         ];
 
-        // Prepend warning action if limit is exceeded
-        if (limit && cardCount >= parseInt(limit, 10)) {
-          actions.unshift({
-            text: "⚠️ List Capacity Exceeded!",
-            callback: function (t) {
-              return t.popup({
-                title: "Capacity Exceeded",
-                url: BASE_URL + "/warning-popup.html",
-                height: 380
-              });
-            }
-          });
-        }
-
         return actions;
       });
     }).catch(function (err) {
@@ -52,7 +38,7 @@ window.TrelloPowerUp.initialize({
             return t.popup({
               title: "Set List Limit",
               url: BASE_URL + "/list-settings.html",
-              height: 380
+              height: 280
             });
           }
         }
