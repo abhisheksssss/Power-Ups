@@ -72,47 +72,55 @@ window.TrelloPowerUp.initialize({
 
   // ─── CARD BADGES: shows limit status on each card ──────────────────────────
   "card-badges": function (t) {
-    return t.list('id', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
-        if (!limit) return [];
-        var cardCount = list.cards ? list.cards.length : 0;
-        var lim = parseInt(limit, 10);
-        var pct = (cardCount / lim) * 100;
-        if (pct >= 100) {
-          return [{ text: cardCount + "/" + lim + " Exceeded", color: "red", refresh: 10 }];
-        } else if (pct >= 70) {
-          return [{ text: cardCount + "/" + lim + " Nearing", color: "yellow", refresh: 10 }];
-        }
-        return [{ text: cardCount + "/" + lim, color: "green", refresh: 10 }];
-      });
-    }).catch(function () { return []; });
+    return [{
+      dynamic: function() {
+        return t.list('id', 'cards').then(function (list) {
+          return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+            if (!limit) return { text: '', refresh: 3600 }; // Return empty badge if no limit
+            var cardCount = list.cards ? list.cards.length : 0;
+            var lim = parseInt(limit, 10);
+            var pct = (cardCount / lim) * 100;
+            if (pct >= 100) {
+              return { text: cardCount + "/" + lim + " Exceeded", color: "red", refresh: 10 };
+            } else if (pct >= 70) {
+              return { text: cardCount + "/" + lim + " Nearing", color: "yellow", refresh: 10 };
+            }
+            return { text: cardCount + "/" + lim, color: "green", refresh: 10 };
+          });
+        }).catch(function () { return { text: '', refresh: 3600 }; });
+      }
+    }];
   },
 
   // ─── CARD DETAIL BADGES: badge on open card when limit exceeded ─────────────
   "card-detail-badges": function (t) {
-    return t.list('id', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
-        if (!limit) return [];
-        var cardCount = list.cards ? list.cards.length : 0;
-        var lim = parseInt(limit, 10);
-        if (cardCount >= lim) {
-          return [{
-            title: "List Capacity",
-            text: "Exceeded! (" + cardCount + "/" + lim + ")",
-            color: "red",
-            refresh: 10,
-            callback: function (t) {
-              return t.popup({
-                title: "Capacity Exceeded",
-                url: BASE_URL + "/warning-popup.html",
-                height: 380
-              });
+    return [{
+      dynamic: function() {
+        return t.list('id', 'cards').then(function (list) {
+          return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+            if (!limit) return { text: '', refresh: 3600 };
+            var cardCount = list.cards ? list.cards.length : 0;
+            var lim = parseInt(limit, 10);
+            if (cardCount >= lim) {
+              return {
+                title: "List Capacity",
+                text: "Exceeded! (" + cardCount + "/" + lim + ")",
+                color: "red",
+                refresh: 10,
+                callback: function (t) {
+                  return t.popup({
+                    title: "Capacity Exceeded",
+                    url: BASE_URL + "/warning-popup.html",
+                    height: 380
+                  });
+                }
+              };
             }
-          }];
-        }
-        return [];
-      });
-    }).catch(function () { return []; });
+            return { text: '', refresh: 3600 };
+          });
+        }).catch(function () { return { text: '', refresh: 3600 }; });
+      }
+    }];
   }
 
 });
