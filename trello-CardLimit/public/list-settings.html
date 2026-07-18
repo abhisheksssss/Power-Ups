@@ -8,8 +8,8 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
-      color: #172B4D;
+      background: #000000;
+      color: #FFFFFF;
       margin: 0;
       padding: 0;
       overflow-y: hidden;
@@ -37,10 +37,26 @@
       background: #e3fcef;
     }
 
+    .list-name-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .list-name {
       font-size: 14px;
       font-weight: 700;
-      color: #172B4D;
+      color: #FFFFFF;
+    }
+
+    .status-dot {
+      font-size: 12px;
+    }
+
+    .limit-count {
+      font-size: 14px;
+      font-weight: 500;
+      color: #8C9BAB;
     }
 
     .status-text {
@@ -50,7 +66,7 @@
     }
 
     .stats {
-      background: #F4F5F7;
+      background: #1d2125;
       border-radius: 8px;
       padding: 12px 14px;
       margin-bottom: 16px;
@@ -63,7 +79,7 @@
       margin-bottom: 8px;
       font-size: 12px;
       font-weight: 500;
-      color: #5E6C84;
+      color: #8C9BAB;
     }
 
     .stats-count {
@@ -73,7 +89,7 @@
 
     .progress-bg {
       height: 6px;
-      background: #DFE1E6;
+      background: #2C333A;
       border-radius: 99px;
       overflow: hidden;
     }
@@ -87,7 +103,7 @@
     .control-label {
       font-size: 11px;
       font-weight: 700;
-      color: #5E6C84;
+      color: #8C9BAB;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 8px;
@@ -97,7 +113,7 @@
       display: flex;
       align-items: center;
       gap: 0;
-      border: 2px solid #DFE1E6;
+      border: 2px solid #38414A;
       border-radius: 8px;
       overflow: hidden;
       margin-bottom: 16px;
@@ -108,11 +124,11 @@
     .number-control button {
       width: 44px;
       height: 100%;
-      background: #F4F5F7;
+      background: #1d2125;
       border: none;
       font-size: 20px;
       font-weight: 400;
-      color: #172B4D;
+      color: #FFFFFF;
       cursor: pointer;
       flex-shrink: 0;
       transition: background 0.15s;
@@ -121,7 +137,7 @@
       justify-content: center;
     }
 
-    .number-control button:hover { background: #EBECF0; }
+    .number-control button:hover { background: #2C333A; }
 
     .number-control input {
       flex: 1;
@@ -129,8 +145,8 @@
       border: none;
       font-size: 16px;
       font-weight: 700;
-      color: #172B4D;
-      background: #fff;
+      color: #FFFFFF;
+      background: #000000;
       outline: none;
       height: 100%;
       width: 100%;
@@ -146,7 +162,7 @@
 
     .hint {
       font-size: 11px;
-      color: #5E6C84;
+      color: #8C9BAB;
       line-height: 1.5;
       margin-bottom: 16px;
     }
@@ -172,16 +188,22 @@
   <div id="container">
     <div class="header">
       <div class="icon-box" id="iconBox">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 6v6l4 2"/>
-      </svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v0a10 10 0 0 1 10 10v0a10 10 0 0 1-10 10v0a10 10 0 0 1-10-10v0a10 10 0 0 1 10-10z"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+          <path d="M16.24 7.76l-4.24 4.24"/>
+        </svg>
+      </div>
+      <div>
+        <div class="list-name-container">
+          <span class="list-name" id="listName">Loading…</span>
+          <span class="status-dot" id="statusDot" style="display:none;">●</span>
+          <span class="limit-count" id="limitCountText" style="display:none;"></span>
+        </div>
+        <div class="status-text" id="statusText" style="color: #22c55e;">Within limit</div>
+      </div>
     </div>
-    <div>
-      <div class="list-name" id="listName">Loading…</div>
-      <div class="status-text" id="statusText" style="color: #22c55e;">Within limit</div>
-    </div>
-  </div>
 
   <div class="stats" id="statsBox" style="display:none;">
     <div class="stats-row">
@@ -237,6 +259,11 @@
         document.getElementById('statusText').style.color = color;
         document.getElementById('iconBox').style.background = color + '22';
         document.getElementById('iconBox').querySelector('svg').setAttribute('stroke', color);
+        
+        document.getElementById('statusDot').style.display = 'inline-block';
+        document.getElementById('statusDot').style.color = color;
+        document.getElementById('limitCountText').style.display = 'inline-block';
+        document.getElementById('limitCountText').textContent = '(' + cardCount + '/' + limitVal + ')';
 
         if (pct >= 100) {
           document.getElementById('statusText').textContent = 'Limit exceeded';
@@ -248,7 +275,9 @@
       } else {
         document.getElementById('statsBox').style.display = 'none';
         document.getElementById('statusText').textContent  = 'No limit set';
-        document.getElementById('statusText').style.color  = '#94a3b8';
+        document.getElementById('statusText').style.color  = '#8C9BAB';
+        document.getElementById('statusDot').style.display = 'none';
+        document.getElementById('limitCountText').style.display = 'none';
       }
 
       // Resize iframe to match new content height
