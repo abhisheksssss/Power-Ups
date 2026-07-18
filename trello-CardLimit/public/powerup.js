@@ -2,15 +2,39 @@ var BASE_URL = 'https://power-ups-dvon.vercel.app';
 
 window.TrelloPowerUp.initialize({
 
+  // ─── 1. LIST HEADER BADGE: shows "2/4" with colored dot ────────────────────
+  'list-badges': function (t) {
+    return t.get('list', 'shared', 'limit').then(function (limit) {
+      if (!limit) {
+        return [{
+          text: 'No limit',
+          color: null,
+          refresh: 60
+        }];
+      }
+      return t.list('id', 'cards').then(function (list) {
+        var cardCount = list.cards ? list.cards.length : 0;
+        var percentage = (cardCount / limit) * 100;
+        var color = 'green';
+        if (percentage >= 100) color = 'red';
+        else if (percentage >= 70) color = 'yellow';
+
+        return [{
+          text: cardCount + ' / ' + limit,
+          color: color,
+          refresh: 10
+        }];
+      });
+    }).catch(function () { return []; });
+  },
+
+  // ─── 2. LIST ACTIONS: "Set Card Limit" in the … menu ──────────────────────
   'list-actions': function (t) {
-    console.log("Trello called list-actions!");
-    
-    return t.list('id', 'cards').then(function(list) {
-      return t.get('list', 'shared', 'limit').then(function(limit) {
-        console.log("List limit fetched:", limit);
+    return t.list('id', 'cards').then(function (list) {
+      return t.get('list', 'shared', 'limit').then(function (limit) {
         var cardCount = list.cards ? list.cards.length : 0;
         var actions = [{
-          text: 'Set List Limit',
+          text: 'Set Card Limit',
           callback: function (t) {
             return t.popup({
               title: 'Set List Limit',
@@ -20,12 +44,12 @@ window.TrelloPowerUp.initialize({
           }
         }];
 
-        if (limit && cardCount > limit) {
+        if (limit && cardCount >= limit) {
           actions.unshift({
-            text: '⚠️ Capacity Exceeded',
+            text: '⚠️ List Capacity Exceeded!',
             callback: function (t) {
               return t.popup({
-                title: 'Warning',
+                title: 'Capacity Exceeded',
                 url: BASE_URL + '/index.html?page=warning-popup',
                 height: 380
               });
@@ -33,11 +57,9 @@ window.TrelloPowerUp.initialize({
           });
         }
         return actions;
-      }).catch(function(err) {
-        console.error("Error in list-actions t.get:", err);
-        // Fallback: still show the button even if get fails
+      }).catch(function () {
         return [{
-          text: 'Set List Limit',
+          text: 'Set Card Limit',
           callback: function (t) {
             return t.popup({
               title: 'Set List Limit',
@@ -47,42 +69,40 @@ window.TrelloPowerUp.initialize({
           }
         }];
       });
-    }).catch(function(err) {
-        console.error("Error in list-actions t.list:", err);
-        return [];
-    });
+    }).catch(function () { return []; });
   },
 
+  // ─── 3. CARD BADGES: show limit status on each card ───────────────────────
   'card-badges': function (t) {
-    return t.get('list', 'shared', 'limit').then(function(limit) {
+    return t.get('list', 'shared', 'limit').then(function (limit) {
       if (!limit) return [];
-      return t.list('id', 'cards').then(function(list) {
-        var cardCount = list.cards.length;
-        var percentage = limit > 0 ? (cardCount / limit) * 100 : 0;
-
+      return t.list('id', 'cards').then(function (list) {
+        var cardCount = list.cards ? list.cards.length : 0;
+        var percentage = (cardCount / limit) * 100;
         if (percentage >= 100) {
-          return [{ text: cardCount + '/' + limit + ' Limit Exceeded', color: 'red' }];
+          return [{ text: cardCount + '/' + limit + ' Exceeded', color: 'red' }];
         } else if (percentage >= 70) {
-          return [{ text: cardCount + '/' + limit + ' Nearing Limit', color: 'yellow' }];
-        } else {
-          return [{ text: cardCount + '/' + limit + ' Cards', color: 'green' }];
+          return [{ text: cardCount + '/' + limit + ' Nearing', color: 'yellow' }];
         }
+        return [];
       });
-    });
+    }).catch(function () { return []; });
   },
 
+  // ─── 4. CARD DETAIL BADGES: badge on card back when exceeded ──────────────
   'card-detail-badges': function (t) {
-    return t.get('list', 'shared', 'limit').then(function(limit) {
+    return t.get('list', 'shared', 'limit').then(function (limit) {
       if (!limit) return [];
-      return t.list('id', 'cards').then(function(list) {
-        if (list.cards.length > limit) {
+      return t.list('id', 'cards').then(function (list) {
+        var cardCount = list.cards ? list.cards.length : 0;
+        if (cardCount >= limit) {
           return [{
             title: 'List Capacity',
-            text: 'Exceeded!',
+            text: 'Exceeded! (' + cardCount + '/' + limit + ')',
             color: 'red',
-            callback: function(t) {
+            callback: function (t) {
               return t.popup({
-                title: 'Warning',
+                title: 'Capacity Exceeded',
                 url: BASE_URL + '/index.html?page=warning-popup',
                 height: 380
               });
@@ -91,6 +111,7 @@ window.TrelloPowerUp.initialize({
         }
         return [];
       });
-    });
+    }).catch(function () { return []; });
   }
+
 });
