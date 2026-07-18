@@ -10,9 +10,14 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #fff;
       color: #172B4D;
+      margin: 0;
       padding: 0;
-      height: auto;
-      overflow: hidden;
+      overflow-y: hidden;
+    }
+    
+    #container {
+      display: flex;
+      flex-direction: column;
     }
 
     .title-bar {
@@ -104,9 +109,9 @@
   </style>
 </head>
 <body>
-
-  <div class="title-bar">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#BF2600">
+  <div id="container">
+    <div class="title-bar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#BF2600">
       <path d="M12 2L1 21H23L12 2ZM12 18a1 1 0 110-2 1 1 0 010 2ZM11 10h2v5h-2z"/>
     </svg>
     <h1>List Capacity Exceed!</h1>
@@ -150,7 +155,7 @@
         t.get('list', 'shared', 'limit').then(function (limit) {
           document.getElementById('limitSpan').textContent = limit || '—';
           // Resize to fit content after data loads
-          t.sizeTo('body').catch(function () {});
+          t.sizeTo('#container').catch(function () {});
         });
       });
     });
@@ -163,5 +168,6 @@
       });
     });
   </script>
+  </div>
 </body>
 </html>
