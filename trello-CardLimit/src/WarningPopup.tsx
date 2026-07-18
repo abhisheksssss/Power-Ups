@@ -20,7 +20,7 @@ export function WarningPopup() {
       t.list('id', 'cards').then((list: any) => {
         setCardCount(list.cards.length);
         
-        t.get(list.id, 'shared', 'limit').then((savedLimit: number) => {
+        t.get('list', 'shared', 'limit').then((savedLimit: number) => {
           if (savedLimit) {
             setLimit(savedLimit);
           }

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Set List Limit</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #172B4D;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #e3fcef;
+    }
+
+    .list-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #172B4D;
+    }
+
+    .status-text {
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .stats {
+      background: #F4F5F7;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #5E6C84;
+    }
+
+    .stats-count {
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .progress-bg {
+      height: 6px;
+      background: #DFE1E6;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #5E6C84;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .number-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 2px solid #DFE1E6;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .number-control button {
+      width: 40px;
+      height: 40px;
+      background: #F4F5F7;
+      border: none;
+      font-size: 20px;
+      font-weight: 300;
+      color: #172B4D;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .number-control button:hover { background: #EBECF0; }
+
+    .number-control input {
+      flex: 1;
+      text-align: center;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      color: #172B4D;
+      background: #fff;
+      outline: none;
+      height: 40px;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #5E6C84;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .save-btn {
+      width: 100%;
+      height: 38px;
+      background: #0052CC;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .save-btn:hover { background: #0065FF; }
+    .save-btn:active { background: #0041A8; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="icon-box" id="iconBox">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="list-name" id="listName">Loading…</div>
+      <div class="status-text" id="statusText" style="color: #22c55e;">Within limit</div>
+    </div>
+  </div>
+
+  <div class="stats" id="statsBox" style="display:none;">
+    <div class="stats-row">
+      <span>Cards in list</span>
+      <span class="stats-count" id="statsCount">0</span>
+    </div>
+    <div class="progress-bg">
+      <div class="progress-fill" id="progressFill" style="width:0%; background:#22c55e;"></div>
+    </div>
+  </div>
+
+  <div class="control-label">Maximum cards</div>
+  <div class="number-control">
+    <button id="decBtn">−</button>
+    <input type="number" id="limitInput" value="0" min="0" />
+    <button id="incBtn">+</button>
+  </div>
+
+  <p class="hint">
+    The list header turns amber past the first 70% limit, and red once it's exceeded. Set to 0 to remove the limit.
+  </p>
+
+  <button class="save-btn" id="saveBtn">Save</button>
+
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script>
+    var t = window.TrelloPowerUp.iframe();
+    var limitVal = 0;
+    var cardCount = 0;
+    var listId = null;
+
+    function getColor(pct) {
+      if (pct >= 100) return '#ef4444';
+      if (pct >= 70)  return '#eab308';
+      return '#22c55e';
+    }
+
+    function updateUI() {
+      var pct = limitVal > 0 ? Math.min(100, (cardCount / limitVal) * 100) : 0;
+      var color = getColor(pct);
+
+      document.getElementById('limitInput').value = limitVal;
+
+      if (limitVal > 0) {
+        document.getElementById('statsBox').style.display = 'block';
+        document.getElementById('statsCount').textContent = cardCount + ' / ' + limitVal;
+        document.getElementById('progressFill').style.width  = pct + '%';
+        document.getElementById('progressFill').style.background = color;
+        document.getElementById('statusText').style.color = color;
+        document.getElementById('iconBox').style.background = color + '22';
+        document.getElementById('iconBox').querySelector('svg').setAttribute('stroke', color);
+
+        if (pct >= 100) {
+          document.getElementById('statusText').textContent = 'Limit exceeded';
+        } else if (pct >= 70) {
+          document.getElementById('statusText').textContent = 'Nearing limit';
+        } else {
+          document.getElementById('statusText').textContent = 'Within limit';
+        }
+      } else {
+        document.getElementById('statsBox').style.display = 'none';
+        document.getElementById('statusText').textContent  = 'No limit set';
+        document.getElementById('statusText').style.color  = '#94a3b8';
+      }
+    }
+
+    t.render(function () {
+      t.list('id', 'name', 'cards').then(function (list) {
+        listId    = list.id;
+        cardCount = list.cards ? list.cards.length : 0;
+        document.getElementById('listName').textContent = list.name;
+
+        return t.get('list', 'shared', 'limit').then(function (saved) {
+          limitVal = saved ? parseInt(saved, 10) : 0;
+          updateUI();
+        });
+      });
+    });
+
+    document.getElementById('incBtn').addEventListener('click', function () {
+      limitVal++;
+      updateUI();
+    });
+
+    document.getElementById('decBtn').addEventListener('click', function () {
+      if (limitVal > 0) limitVal--;
+      updateUI();
+    });
+
+    document.getElementById('limitInput').addEventListener('change', function () {
+      limitVal = Math.max(0, parseInt(this.value, 10) || 0);
+      updateUI();
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', function () {
+      if (limitVal > 0) {
+        t.set('list', 'shared', 'limit', limitVal).then(function () {
+          t.closePopup();
+        });
+      } else {
+        t.remove('list', 'shared', 'limit').then(function () {
+          t.closePopup();
+        });
+      }
+    });
+  </script>
+</body>
+</html>
