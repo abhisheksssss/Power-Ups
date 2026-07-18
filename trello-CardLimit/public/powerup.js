@@ -81,11 +81,11 @@ window.TrelloPowerUp.initialize({
             var lim = parseInt(limit, 10);
             var pct = (cardCount / lim) * 100;
             if (pct >= 100) {
-              return { text: cardCount + "/" + lim + " Exceeded", color: "red", refresh: 10 };
+              return { text: cardCount + "/" + lim + " Exceeded", color: "red", refresh: 1 };
             } else if (pct >= 70) {
-              return { text: cardCount + "/" + lim + " Nearing", color: "yellow", refresh: 10 };
+              return { text: cardCount + "/" + lim + " Nearing", color: "yellow", refresh: 1 };
             }
-            return { text: cardCount + "/" + lim, color: "green", refresh: 10 };
+            return { text: cardCount + "/" + lim, color: "green", refresh: 1 };
           });
         }).catch(function () { return { text: '', refresh: 3600 }; });
       }
@@ -106,7 +106,7 @@ window.TrelloPowerUp.initialize({
                 title: "List Capacity",
                 text: "Exceeded! (" + cardCount + "/" + lim + ")",
                 color: "red",
-                refresh: 10,
+                refresh: 1,
                 callback: function (t) {
                   return t.popup({
                     title: "Capacity Exceeded",
