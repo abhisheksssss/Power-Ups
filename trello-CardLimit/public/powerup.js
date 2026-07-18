@@ -1,5 +1,7 @@
 var BASE_URL = 'https://power-ups-dvon.vercel.app';
 
+console.log("Set List Limit setUp")
+
 window.TrelloPowerUp.initialize({
   "board-buttons": function () {
     console.log("Board buttons working");
