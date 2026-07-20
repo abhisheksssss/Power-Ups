@@ -23,16 +23,15 @@ function buildLimitedListName(name, cardCount, limit) {
 
 function renameListWithToken(listId, name, token) {
   var url = 'https://api.trello.com/1/lists/' + encodeURIComponent(listId) +
-    '?key=' + encodeURIComponent(TRELLO_API_KEY) +
+    '?name=' + encodeURIComponent(name) +
+    '&key=' + encodeURIComponent(TRELLO_API_KEY) +
     '&token=' + encodeURIComponent(token);
+
+  console.log('Renaming Trello list:', listId, name);
 
   return fetch(url, {
     method: 'PUT',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ name: name })
+    headers: { 'Accept': 'application/json' }
   }).then(function (response) {
     if (!response.ok) {
       return response.text().then(function (body) {
@@ -40,6 +39,9 @@ function renameListWithToken(listId, name, token) {
       });
     }
     return response.json();
+  }).then(function (renamedList) {
+    console.log('Trello list renamed:', renamedList && renamedList.name);
+    return renamedList;
   });
 }
 
