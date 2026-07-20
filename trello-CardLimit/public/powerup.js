@@ -120,7 +120,7 @@ window.TrelloPowerUp.initialize({
             try {
                 let token = await t.get("member", "private", "oauthToken");
                 if (!token) {
-                    token = await getOAuthToken(t);
+                    return getOAuthToken(t);
                 }
             } catch (e) {
                 console.error(e);
