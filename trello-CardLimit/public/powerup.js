@@ -109,90 +109,25 @@ async function maybeRenameList(t, list, cardCount, lim) {
 window.TrelloPowerUp.initialize({
 
     // ─── LIST ACTIONS: "Set Card Limit" in the … menu ─────────────────────
+    // IMPORTANT: Trello capability callbacks have a strict 5-second timeout.
+    // The callback must resolve instantly. Do NOT do async work (t.get, t.list,
+    // t.authorize) here — pass the listId to the popup and let the popup page
+    // handle auth, limit checking, and warnings itself.
     "list-actions": function (t) {
-        // We only need the list id here — card count and limit are re-fetched
-        // fresh inside the callback so they're never stale when the user clicks.
         return t.list("id").then(function (list) {
-            return [{
-                text: "Set Card Limit",
-                callback: function (t) {
-
-                    // Check if user already has a token in storage
-                    return t.get("member", "private", "oauthToken").then(function (token) {
-
-                        // NO TOKEN: return the authorize() promise DIRECTLY.
-                        // When Trello's PluginRunner sees a callback return t.authorize(),
-                        // it handles it natively (no 5-second timeout applies).
-                        // Do NOT await it, do NOT call it in the background —
-                        // RETURN it so Trello can intercept it.
-                        if (!token) {
-                            return t.authorize(
-                                "https://trello.com/1/authorize?" +
-                                new URLSearchParams({
-                                    expiration: "never",
-                                    name: "List Capacity Power-Up",
-                                    scope: "read,write",
-                                    response_type: "token",
-                                    key: API_KEY,
-                                    callback_method: "fragment",
-                                    return_url: BASE_URL + "/auth-success.html"
-                                }).toString()
-                            );
-                        }
-
-                        // HAS TOKEN: re-fetch fresh data and open the right popup.
-                        return Promise.all([
-                            t.list("id", "cards"),
-                            t.get("board", "shared", "limit_" + list.id)
-                        ]).then(function (results) {
-                            var freshList  = results[0];
-                            var freshLimit = results[1];
-                            var cardCount  = freshList.cards ? freshList.cards.length : 0;
-
-                            // No limit set yet → open settings
-                            if (!freshLimit) {
-                                return t.popup({
-                                    title: "Set Card Limit",
-                                    url: BASE_URL + "/list-settings.html",
-                                    height: 380
-                                });
-                            }
-
-                            var lim = parseInt(freshLimit, 10);
-
-                            // Limit exceeded → show warning first
-                            if (cardCount >= lim) {
-                                return t.popup({
-                                    title: "⚠ Capacity Exceeded",
-                                    url: BASE_URL +
-                                        "/warning-popup.html?listId=" +
-                                        encodeURIComponent(list.id),
-                                    height: 380
-                                });
-                            }
-
-                            // Under limit → open settings
-                            return t.popup({
-                                title: "Set Card Limit",
-                                url: BASE_URL + "/list-settings.html",
-                                height: 380
-                            });
-                        });
-                    });
-                }
-            }];
-        }).catch(function (err) {
-            console.error(err);
             return [{
                 text: "Set Card Limit",
                 callback: function (t) {
                     return t.popup({
                         title: "Set Card Limit",
-                        url: BASE_URL + "/list-settings.html",
+                        url: BASE_URL + "/list-settings.html?listId=" + encodeURIComponent(list.id),
                         height: 380
                     });
                 }
             }];
+        }).catch(function (err) {
+            console.error(err);
+            return [];
         });
     },
 
