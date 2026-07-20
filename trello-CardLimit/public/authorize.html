@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Authorize List Rename</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #172B4D;
+      background: #FFFFFF;
+    }
+    #container { display: grid; gap: 12px; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.3; }
+    p { margin: 0; color: #5E6C84; font-size: 13px; line-height: 1.5; }
+    button {
+      height: 36px;
+      border: 0;
+      border-radius: 6px;
+      background: #0052CC;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #0065FF; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>Authorize List Rename</h1>
+    <p>This Power-Up needs Trello write access to rename lists with their card count.</p>
+    <button id="authorizeBtn">Authorize</button>
+  </div>
+
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script>
+    var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
+    var APP_NAME = 'List Limit Power-Up';
+    var t = window.TrelloPowerUp.iframe({
+      appKey: TRELLO_API_KEY,
+      appName: APP_NAME
+    });
+
+    t.render(function () {
+      t.sizeTo('#container').catch(function () {});
+    });
+
+    document.getElementById('authorizeBtn').addEventListener('click', function () {
+      Promise.resolve(t.getRestApi())
+        .then(function (client) {
+          return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }));
+        })
+        .then(function () {
+          return t.closePopup();
+        })
+        .catch(function (err) {
+          console.error('Authorization failed:', err);
+          t.alert({ message: 'Authorization failed', duration: 5 });
+        });
+    });
+  </script>
+</body>
+</html>

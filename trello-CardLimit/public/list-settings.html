@@ -313,8 +313,12 @@
     }
 
     function authorizeAndRenameList(nextName, token) {
-      if (!listId || !nextName || nextName === listName) {
-        console.log('Skipping Trello list rename:', {
+      // Strip any existing suffix from the current list name for comparison
+      var currentStripped = stripLimitSuffix(listName);
+      // Skip if nothing would change: nextName matches the current raw name or
+      // the stripped name (e.g. removing a limit from a list with no suffix)
+      if (!listId || !nextName || nextName === listName || nextName === currentStripped) {
+        console.log('Skipping Trello list rename (no change needed):', {
           listId: listId,
           currentName: listName,
           nextName: nextName,

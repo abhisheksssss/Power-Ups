@@ -70,18 +70,23 @@ function getRestToken(t, shouldAuthorize) {
 function syncListTitle(t, list, limit, options) {
   options = options || {};
 
-  var lim = parseInt(limit, 10);
+  // Parse limit — treat 0 / null / undefined as "no limit"
+  var lim = (limit != null && limit !== '') ? parseInt(limit, 10) : 0;
   var cardCount = list.cards ? list.cards.length : 0;
   var nextName = buildLimitedListName(list.name, cardCount, lim);
 
-  if (!list.id || !nextName || nextName === list.name) {
-    console.log('Skipping Trello list rename:', {
-      listId: list.id,
-      currentName: list.name,
-      nextName: nextName
-    });
+  // Skip if nothing meaningful to rename
+  if (!list.id || !nextName) {
     return Promise.resolve();
   }
+
+  // Skip if the resulting name is identical to the current name
+  if (nextName === list.name) {
+    console.log('Skipping Trello list rename (no change):', list.name);
+    return Promise.resolve();
+  }
+
+  // Skip if a rename to this exact name is already in-flight
   if (renameInFlightByListId[list.id] === nextName) return Promise.resolve();
   renameInFlightByListId[list.id] = nextName;
 
@@ -89,6 +94,7 @@ function syncListTitle(t, list, limit, options) {
     .then(function (token) {
       if (!token) {
         console.log('Skipping Trello list rename: missing REST token. Authorize the Power-Up first.');
+        delete renameInFlightByListId[list.id];
         return null;
       }
       return renameListWithToken(list.id, nextName, token);
@@ -121,8 +127,8 @@ window.TrelloPowerUp.initialize({
   'show-authorization': function (t) {
     return t.popup({
       title: 'Authorize List Rename',
-      url: BASE_URL + '/list-settings.html',
-      height: 380
+      url: BASE_URL + '/authorize.html',
+      height: 180
     });
   },
 
@@ -178,12 +184,14 @@ window.TrelloPowerUp.initialize({
   'card-badges': function (t) {
     return t.list('id', 'name', 'cards').then(function (list) {
       return getListLimit(t, list.id).then(function (limit) {
-        if (!limit) {
-          syncListTitle(t, list, 0);
+        var cardCount = list.cards ? list.cards.length : 0;
+
+        if (!limit || parseInt(limit, 10) <= 0) {
+          // No limit set — strip any leftover suffix from the list name
+          syncListTitle(t, list, null);
           return [];
         }
 
-        var cardCount = list.cards ? list.cards.length : 0;
         var lim = parseInt(limit, 10);
         var status = getLimitStatus(cardCount, lim);
         var text = cardCount + '/' + lim;
@@ -194,15 +202,9 @@ window.TrelloPowerUp.initialize({
           text += ' At limit';
         }
 
+        // Sync the list title suffix — do NOT call t.set/t.get here
+        // as that would cause an infinite badge refresh loop.
         syncListTitle(t, list, lim);
-
-        t.get('board', 'private', 'count_' + list.id).then(function (prevCount) {
-          if (prevCount !== cardCount) {
-            t.set('board', 'private', 'count_' + list.id, cardCount).then(function () {
-              t.set('board', 'private', 'force_refresh', Date.now());
-            });
-          }
-        });
 
         return [{ text: text, color: status.color }];
       });
