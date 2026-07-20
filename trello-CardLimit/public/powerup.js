@@ -45,6 +45,13 @@ function renameListWithToken(listId, name, token) {
   });
 }
 
+function getListLimit(t, listId) {
+  return t.get('board', 'shared', 'limit_' + listId)
+    .then(function (boardLimit) {
+      if (boardLimit) return boardLimit;
+      return t.get('list', 'shared', 'limit');
+    });
+}
 function getRestToken(t, shouldAuthorize) {
   return Promise.resolve(t.getRestApi())
     .then(function (client) {
@@ -121,7 +128,7 @@ window.TrelloPowerUp.initialize({
 
   'list-actions': function (t) {
     return t.list('id', 'name', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id)
+      return getListLimit(t, list.id)
         .then(function (limit) {
           var cardCount = list.cards ? list.cards.length : 0;
           var lim = parseInt(limit, 10);
@@ -170,7 +177,7 @@ window.TrelloPowerUp.initialize({
 
   'card-badges': function (t) {
     return t.list('id', 'name', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+      return getListLimit(t, list.id).then(function (limit) {
         if (!limit) {
           syncListTitle(t, list, 0);
           return [];
@@ -206,7 +213,7 @@ window.TrelloPowerUp.initialize({
 
   'card-detail-badges': function (t) {
     return t.list('id', 'name', 'cards').then(function (list) {
-      return t.get('board', 'shared', 'limit_' + list.id).then(function (limit) {
+      return getListLimit(t, list.id).then(function (limit) {
         if (!limit) return [];
         var cardCount = list.cards ? list.cards.length : 0;
         var lim = parseInt(limit, 10);

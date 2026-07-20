@@ -340,6 +340,19 @@
         });
     }
 
+    function saveLimit() {
+      if (limitVal > 0) {
+        return t.set('board', 'shared', 'limit_' + listId, limitVal)
+          .then(function () {
+            return t.set('list', 'shared', 'limit', limitVal);
+          });
+      }
+
+      return t.remove('board', 'shared', 'limit_' + listId)
+        .then(function () {
+          return t.remove('list', 'shared', 'limit');
+        });
+    }
     function sizeToContent() {
       t.sizeTo('#container').catch(function () {});
     }
@@ -435,9 +448,7 @@
         })
         .then(function (restToken) {
           token = restToken;
-          return limitVal > 0
-            ? t.set('board', 'shared', 'limit_' + listId, limitVal)
-            : t.remove('board', 'shared', 'limit_' + listId);
+          return saveLimit();
         })
         .then(function () {
           console.log('Saved successfully');
