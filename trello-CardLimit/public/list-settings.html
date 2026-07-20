@@ -257,13 +257,13 @@
 
     function getStatusEmoji(count, limit) {
       if (!limit || limit <= 0) return '';
-      if (count > limit) return '🔴';
-      if (count === limit) return '🟡';
-      return '🟢';
+      if (count > limit) return '\uD83D\uDD34';
+      if (count === limit) return '\uD83D\uDFE1';
+      return '\uD83D\uDFE2';
     }
 
     function stripLimitSuffix(name) {
-      return String(name || '').replace(/\s*[🟢🟡🔴]\s*\(\d+\s*\/\s*\d+\)\s*$/u, '').trim();
+      return String(name || '').replace(/\s*(?:\uD83D\uDFE2|\uD83D\uDFE1|\uD83D\uDD34)\s*\(\d+\s*\/\s*\d+\)\s*$/u, '').trim();
     }
 
     function buildLimitedListName(name, count, limit) {
@@ -299,7 +299,7 @@
       var nextName = buildLimitedListName(listName, cardCount, limitVal);
       if (!listId || !nextName || nextName === listName) return Promise.resolve();
 
-      return t.getRestApi()
+      return Promise.resolve(t.getRestApi())
         .then(function (client) {
           return client.getToken().then(function (token) {
             if (token) return token;

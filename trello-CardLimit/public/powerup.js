@@ -5,13 +5,13 @@ var renameInFlightByListId = {};
 
 function getLimitStatus(cardCount, limit) {
   if (!limit || limit <= 0) return null;
-  if (cardCount > limit) return { emoji: '🔴', color: 'red', label: 'Exceeded' };
-  if (cardCount === limit) return { emoji: '🟡', color: 'yellow', label: 'At limit' };
-  return { emoji: '🟢', color: 'green', label: 'Within limit' };
+  if (cardCount > limit) return { emoji: '\uD83D\uDD34', color: 'red', label: 'Exceeded' };
+  if (cardCount === limit) return { emoji: '\uD83D\uDFE1', color: 'yellow', label: 'At limit' };
+  return { emoji: '\uD83D\uDFE2', color: 'green', label: 'Within limit' };
 }
 
 function stripLimitSuffix(name) {
-  return String(name || '').replace(/\s*[🟢🟡🔴]\s*\(\d+\s*\/\s*\d+\)\s*$/u, '').trim();
+  return String(name || '').replace(/\s*(?:\uD83D\uDFE2|\uD83D\uDFE1|\uD83D\uDD34)\s*\(\d+\s*\/\s*\d+\)\s*$/u, '').trim();
 }
 
 function buildLimitedListName(name, cardCount, limit) {
@@ -54,7 +54,7 @@ function syncListTitle(t, list, limit, options) {
   if (renameInFlightByListId[list.id] === nextName) return Promise.resolve();
   renameInFlightByListId[list.id] = nextName;
 
-  return t.getRestApi()
+  return Promise.resolve(t.getRestApi())
     .then(function (client) {
       if (options.authorize) {
         return client.getToken().then(function (token) {
@@ -82,7 +82,7 @@ console.log('Set List Limit setup');
 
 window.TrelloPowerUp.initialize({
   'authorization-status': function (t) {
-    return t.getRestApi()
+    return Promise.resolve(t.getRestApi())
       .then(function (client) {
         return client.isAuthorized();
       })
