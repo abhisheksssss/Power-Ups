@@ -205,8 +205,8 @@
 </div>
       <div>
         <div class="list-name-container">
-          <span class="list-name" id="listName">Loading…</span>
-         <span class="status-dot" id="statusDot" style="display:none; font-size: 30px;">●</span>
+          <span class="list-name" id="listName">Loading...</span>
+         <span class="status-dot" id="statusDot" style="display:none; font-size: 30px;">&#9679;</span>
           <span class="limit-count" id="limitCountText" style="display:none;"></span>
         </div>
         <div class="status-text" id="statusText" style="color: #22c55e;">Within limit</div>
@@ -225,28 +225,93 @@
 
   <div class="control-label">Maximum cards</div>
   <div class="number-control">
-    <button id="decBtn">−</button>
+    <button id="decBtn">-</button>
     <input type="number" id="limitInput" value="0" min="0" />
     <button id="incBtn">+</button>
   </div>
 
   <p class="hint">
-    The list header turns amber past the first 70% limit, and red once it's exceeded. Set to 0 to remove the limit.
+    The list name turns yellow at the limit, and red once it's exceeded. Set to 0 to remove the limit suffix.
   </p>
 
   <button class="save-btn" id="saveBtn">Save</button>
 
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <script>
-    var t = window.TrelloPowerUp.iframe();
+    var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
+    var APP_NAME = 'List Limit Power-Up';
+    var t = window.TrelloPowerUp.iframe({
+      appKey: TRELLO_API_KEY,
+      appName: APP_NAME
+    });
     var limitVal = 0;
     var cardCount = 0;
     var listId = null;
+    var listName = '';
 
-    function getColor(pct) {
-      if (pct >= 100) return '#ef4444';
-      if (pct >= 70)  return '#eab308';
+    function getColor(count, limit) {
+      if (limit > 0 && count > limit) return '#ef4444';
+      if (limit > 0 && count === limit) return '#eab308';
       return '#22c55e';
+    }
+
+    function getStatusEmoji(count, limit) {
+      if (!limit || limit <= 0) return '';
+      if (count > limit) return '🔴';
+      if (count === limit) return '🟡';
+      return '🟢';
+    }
+
+    function stripLimitSuffix(name) {
+      return String(name || '').replace(/\s*[🟢🟡🔴]\s*\(\d+\s*\/\s*\d+\)\s*$/u, '').trim();
+    }
+
+    function buildLimitedListName(name, count, limit) {
+      var baseName = stripLimitSuffix(name);
+      var emoji = getStatusEmoji(count, limit);
+      if (!emoji) return baseName;
+      return baseName + ' ' + emoji + ' (' + count + '/' + limit + ')';
+    }
+
+    function renameListWithToken(name, token) {
+      var url = 'https://api.trello.com/1/lists/' + encodeURIComponent(listId) +
+        '?key=' + encodeURIComponent(TRELLO_API_KEY) +
+        '&token=' + encodeURIComponent(token);
+
+      return fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: name })
+      }).then(function (response) {
+        if (!response.ok) {
+          return response.text().then(function (body) {
+            throw new Error('Trello rename failed: ' + response.status + ' ' + body);
+          });
+        }
+        return response.json();
+      });
+    }
+
+    function authorizeAndRenameList() {
+      var nextName = buildLimitedListName(listName, cardCount, limitVal);
+      if (!listId || !nextName || nextName === listName) return Promise.resolve();
+
+      return t.getRestApi()
+        .then(function (client) {
+          return client.getToken().then(function (token) {
+            if (token) return token;
+            return client.authorize({ scope: 'read,write', expiration: 'never' });
+          });
+        })
+        .then(function (token) {
+          return renameListWithToken(nextName, token);
+        })
+        .then(function () {
+          listName = nextName;
+        });
     }
 
     function sizeToContent() {
@@ -255,7 +320,7 @@
 
     function updateUI() {
       var pct = limitVal > 0 ? Math.min(100, (cardCount / limitVal) * 100) : 0;
-      var color = getColor(pct);
+      var color = getColor(cardCount, limitVal);
 
       document.getElementById('limitInput').value = limitVal;
 
@@ -267,16 +332,15 @@
         document.getElementById('statusText').style.color = color;
         document.getElementById('iconBox').style.background = color + '22';
         document.getElementById('iconBox').querySelector('svg').setAttribute('stroke', color);
-        
         document.getElementById('statusDot').style.display = 'inline-block';
         document.getElementById('statusDot').style.color = color;
         document.getElementById('limitCountText').style.display = 'inline-block';
         document.getElementById('limitCountText').textContent = '(' + cardCount + '/' + limitVal + ')';
 
-        if (pct >= 100) {
+        if (cardCount > limitVal) {
           document.getElementById('statusText').textContent = 'Limit exceeded';
-        } else if (pct >= 70) {
-          document.getElementById('statusText').textContent = 'Nearing limit';
+        } else if (cardCount === limitVal) {
+          document.getElementById('statusText').textContent = 'At limit';
         } else {
           document.getElementById('statusText').textContent = 'Within limit';
         }
@@ -288,15 +352,15 @@
         document.getElementById('limitCountText').style.display = 'none';
       }
 
-      // Resize iframe to match new content height
       sizeToContent();
     }
 
     t.render(function () {
       t.list('id', 'name', 'cards').then(function (list) {
-        listId    = list.id;
+        listId = list.id;
+        listName = list.name;
         cardCount = list.cards ? list.cards.length : 0;
-        document.getElementById('listName').textContent = list.name;
+        document.getElementById('listName').textContent = stripLimitSuffix(list.name);
 
         return t.get('board', 'shared', 'limit_' + list.id).then(function (saved) {
           limitVal = saved ? parseInt(saved, 10) : 0;
@@ -321,25 +385,24 @@
     });
 
     document.getElementById('saveBtn').addEventListener('click', function () {
-      console.log("Saving:", limitVal);
+      console.log('Saving:', limitVal);
 
-      const action = limitVal > 0
-        ? t.set("board", "shared", "limit_" + listId, limitVal)
-        : t.remove("board", "shared", "limit_" + listId);
+      var action = limitVal > 0
+        ? t.set('board', 'shared', 'limit_' + listId, limitVal)
+        : t.remove('board', 'shared', 'limit_' + listId);
 
       action
         .then(function () {
-          console.log("Saved successfully");
-          return t.get("board", "shared", "limit_" + listId);
+          console.log('Saved successfully');
+          return authorizeAndRenameList();
         })
-        .then(function (saved) {
-          console.log("Read back:", saved);
+        .then(function () {
           t.closePopup();
         })
         .catch(function (err) {
-          console.error("Save failed:", err);
+          console.error('Save failed:', err);
           t.alert({
-            message: "Failed to save limit",
+            message: 'Failed to save limit or rename list',
             duration: 5
           });
         });
