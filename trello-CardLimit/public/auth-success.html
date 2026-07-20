@@ -14,11 +14,8 @@ const token = new URLSearchParams(
 ).get("token");
 
 if (window.opener) {
-
     window.opener.postMessage({ type: "trello-oauth", token: token }, "https://trello.com");
-
 }
-
 window.close();
 
 </script>

@@ -110,52 +110,65 @@ window.TrelloPowerUp.initialize({
 
     // ─── LIST ACTIONS: "Set Card Limit" in the … menu ─────────────────────
     "list-actions": function (t) {
-        return t.list("id", "cards").then(function (list) {
-            return t.get("board", "shared", "limit_" + list.id)
-                .then(function (limit) {
-                    var cardCount = list.cards ? list.cards.length : 0;
+        // We only need the list id here — card count and limit are re-fetched
+        // fresh inside the callback so they're never stale when the user clicks.
+        return t.list("id").then(function (list) {
+            return [{
+                text: "Set Card Limit",
+                callback: async function (t) {
 
-                    return [{
-                        text: "Set Card Limit",
-                        callback: async function (t) {
-                            try {
-                                let token = await t.get("member", "private", "oauthToken");
-                                if (!token) {
-                                    getOAuthToken(t);
-                                    return;
-                                }
-                            } catch (e) {
-                                console.error(e);
-                            }
+                    // 1. Ensure the user has authorised — await so the popup
+                    //    only continues after auth is fully complete.
+                    let token;
+                    try {
+                        token = await getOAuthToken(t);
+                    } catch (e) {
+                        // t.authorize() rejects if the user closes the auth
+                        // window. Silently bail — nothing to open.
+                        console.error("Auth failed or was cancelled:", e);
+                        return;
+                    }
 
-                            if (!limit) {
-                                return t.popup({
-                                    title: "Set Card Limit",
-                                    url: BASE_URL + "/list-settings.html",
-                                    height: 380
-                                });
-                            }
+                    if (!token) return; // safety guard
 
-                            var lim = parseInt(limit, 10);
+                    // 2. Re-fetch live data at click time (not stale render data).
+                    const [freshList, freshLimit] = await Promise.all([
+                        t.list("id", "cards"),
+                        t.get("board", "shared", "limit_" + list.id)
+                    ]);
 
-                            if (cardCount >= lim) {
-                                return t.popup({
-                                    title: "⚠ Capacity Exceeded",
-                                    url: BASE_URL +
-                                        "/warning-popup.html?listId=" +
-                                        encodeURIComponent(list.id),
-                                    height: 380
-                                });
-                            }
+                    const cardCount = freshList.cards ? freshList.cards.length : 0;
 
-                            return t.popup({
-                                title: "Set Card Limit",
-                                url: BASE_URL + "/list-settings.html",
-                                height: 380
-                            });
-                        }
-                    }];
-                });
+                    // 3. No limit set yet → open settings unconditionally.
+                    if (!freshLimit) {
+                        return t.popup({
+                            title: "Set Card Limit",
+                            url: BASE_URL + "/list-settings.html",
+                            height: 380
+                        });
+                    }
+
+                    const lim = parseInt(freshLimit, 10);
+
+                    // 4. Limit exceeded → show warning first.
+                    if (cardCount >= lim) {
+                        return t.popup({
+                            title: "⚠ Capacity Exceeded",
+                            url: BASE_URL +
+                                "/warning-popup.html?listId=" +
+                                encodeURIComponent(list.id),
+                            height: 380
+                        });
+                    }
+
+                    // 5. Under limit → open settings normally.
+                    return t.popup({
+                        title: "Set Card Limit",
+                        url: BASE_URL + "/list-settings.html",
+                        height: 380
+                    });
+                }
+            }];
         }).catch(function (err) {
             console.error(err);
             return [{
