@@ -117,19 +117,15 @@ window.TrelloPowerUp.initialize({
                 text: "Set Card Limit",
                 callback: async function (t) {
 
-                    // 1. Ensure the user has authorised — await so the popup
-                    //    only continues after auth is fully complete.
-                    let token;
-                    try {
-                        token = await getOAuthToken(t);
-                    } catch (e) {
-                        // t.authorize() rejects if the user closes the auth
-                        // window. Silently bail — nothing to open.
-                        console.error("Auth failed or was cancelled:", e);
-                        return;
+                    // 1. Ensure the user has authorised.
+                    // We CANNOT await t.authorize() because Trello capability 
+                    // callbacks have a strict 5-second timeout. Waiting for user 
+                    // interaction will cause it to crash with "IFrameIO request timed out".
+                    let token = await t.get("member", "private", "oauthToken");
+                    if (!token) {
+                        getOAuthToken(t); // Fire auth flow in background
+                        return; // Resolve immediately to avoid timeout
                     }
-
-                    if (!token) return; // safety guard
 
                     // 2. Re-fetch live data at click time (not stale render data).
                     const [freshList, freshLimit] = await Promise.all([
