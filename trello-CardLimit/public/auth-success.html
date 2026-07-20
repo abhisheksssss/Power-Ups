@@ -2,35 +2,33 @@
 <html>
 
 <head>
-  <meta charset="UTF-8">
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 
 <body>
 
 <script>
-(async function () {
 
-    const t = window.TrelloPowerUp.iframe();
+const token = new URLSearchParams(
+    window.location.hash.substring(1)
+).get("token");
 
-    // Read token from URL fragment
-    const params = new URLSearchParams(window.location.hash.substring(1));
+if (window.opener) {
 
-    const token = params.get("token");
+    window.opener.postMessage({
 
-    if (!token) {
-        document.body.innerHTML = "Authorization failed.";
-        return;
-    }
+        type: "trello-oauth",
 
-    // Store token
-    await t.set("member", "private", "oauthToken", token);
+        token: token
 
-    // Close popup
-    t.closePopup();
+    }, "*");
 
-})();
+}
+
+window.close();
+
 </script>
 
 </body>
+
 </html>

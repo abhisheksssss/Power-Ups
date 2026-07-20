@@ -4,7 +4,21 @@ const API_KEY = "1bde546d7e6e1918bea4131b50dd462d";
 
 console.log("Set List Limit setUp");
 
+window.addEventListener("message", async (event) => {
 
+    if (event.data.type !== "trello-oauth")
+        return;
+
+    const t = window.TrelloPowerUp.iframe();
+
+    await t.set(
+        "member",
+        "private",
+        "oauthToken",
+        event.data.token
+    );
+
+});
 
 async function getOAuthToken(t) {
 
@@ -14,7 +28,7 @@ async function getOAuthToken(t) {
         return token;
     }
 
-    await t.authorize(
+    return t.authorize(
         "https://trello.com/1/authorize?" +
         new URLSearchParams({
 
@@ -34,10 +48,6 @@ async function getOAuthToken(t) {
 
         }).toString()
     );
-
-    token = await t.get("member", "private", "oauthToken");
-
-    return token;
 }
 
 
@@ -57,6 +67,9 @@ async function renameList(listId, listName, count, limit, token) {
         dot = "🔴";
 
     const newName = `${baseName} ${dot} (${count}/${limit})`;
+
+    if (newName === listName)
+        return;
 
     const params = new URLSearchParams({
 
@@ -78,21 +91,17 @@ async function renameList(listId, listName, count, limit, token) {
 
     );
 
+    if (!response.ok) {
+
+        throw new Error(await response.text());
+
+    }
+
     return response.json();
 }
 
 
 window.TrelloPowerUp.initialize({
-
-
-
-  callback: async function(t){
-
-    const token = await getOAuthToken(t);
-
-    console.log(token);
-
-  },
 
   // ─── LIST ACTIONS: "Set Card Limit" in the … menu ──────────────────────────
   "list-actions": function (t) {
@@ -106,7 +115,16 @@ window.TrelloPowerUp.initialize({
 
         return [{
           text: "Set Card Limit",
-          callback: function (t) {
+          callback: async function (t) {
+
+            try {
+                let token = await t.get("member", "private", "oauthToken");
+                if (!token) {
+                    token = await getOAuthToken(t);
+                }
+            } catch (e) {
+                console.error(e);
+            }
 
             // No limit set → Open settings
             if (!limit) {
@@ -193,7 +211,15 @@ window.TrelloPowerUp.initialize({
       await t.set('board', 'private', 'force_refresh', Date.now());
 
       // Get OAuth token
-      const token = await getOAuthToken(t);
+      const token = await t.get(
+          "member",
+          "private",
+          "oauthToken"
+      );
+
+      if (!token) {
+          return;
+      }
 
       // Rename list
       await renameList(
