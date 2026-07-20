@@ -80,7 +80,10 @@ function syncListTitle(t, list, limit, options) {
 
   return getRestToken(t, !!options.authorize)
     .then(function (token) {
-      if (!token) throw new Error('Missing Trello REST token. Authorize the Power-Up first.');
+      if (!token) {
+        console.log('Skipping Trello list rename: missing REST token. Authorize the Power-Up first.');
+        return null;
+      }
       return renameListWithToken(list.id, nextName, token);
     })
     .catch(function (err) {
