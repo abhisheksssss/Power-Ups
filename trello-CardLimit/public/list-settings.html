@@ -297,22 +297,48 @@
       });
     }
 
-    function authorizeAndRenameList() {
-      var nextName = buildLimitedListName(listName, cardCount, limitVal);
-      if (!listId || !nextName || nextName === listName) return Promise.resolve();
-
+    function getRestToken(shouldAuthorize) {
       return Promise.resolve(t.getRestApi())
         .then(function (client) {
-          return client.getToken().then(function (token) {
-            if (token) return token;
-            return client.authorize({ scope: 'read,write', expiration: 'never' });
-          });
-        })
-        .then(function (token) {
-          return renameListWithToken(nextName, token);
-        })
-        .then(function () {
-          listName = nextName;
+          return Promise.resolve(client.getToken())
+            .then(function (token) {
+              if (token || !shouldAuthorize) return token;
+              return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }))
+                .then(function (authorizedToken) {
+                  if (authorizedToken) return authorizedToken;
+                  return Promise.resolve(client.getToken());
+                });
+            });
+        });
+    }
+
+    function authorizeAndRenameList() {
+      return t.list('id', 'name', 'cards')
+        .then(function (list) {
+          listId = list.id;
+          listName = list.name;
+          cardCount = list.cards ? list.cards.length : 0;
+
+          var nextName = buildLimitedListName(listName, cardCount, limitVal);
+          if (!listId || !nextName || nextName === listName) {
+            console.log('Skipping Trello list rename:', {
+              listId: listId,
+              currentName: listName,
+              nextName: nextName,
+              cardCount: cardCount,
+              limit: limitVal
+            });
+            return null;
+          }
+
+          return getRestToken(true)
+            .then(function (token) {
+              if (!token) throw new Error('Missing Trello REST token. Authorize the Power-Up first.');
+              return renameListWithToken(nextName, token);
+            })
+            .then(function () {
+              listName = nextName;
+            });
         });
     }
 
@@ -389,11 +415,13 @@
     document.getElementById('saveBtn').addEventListener('click', function () {
       console.log('Saving:', limitVal);
 
-      var action = limitVal > 0
-        ? t.set('board', 'shared', 'limit_' + listId, limitVal)
-        : t.remove('board', 'shared', 'limit_' + listId);
-
-      action
+      t.list('id')
+        .then(function (list) {
+          listId = list.id;
+          return limitVal > 0
+            ? t.set('board', 'shared', 'limit_' + listId, limitVal)
+            : t.remove('board', 'shared', 'limit_' + listId);
+        })
         .then(function () {
           console.log('Saved successfully');
           return authorizeAndRenameList();

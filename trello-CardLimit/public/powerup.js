@@ -45,6 +45,21 @@ function renameListWithToken(listId, name, token) {
   });
 }
 
+function getRestToken(t, shouldAuthorize) {
+  return Promise.resolve(t.getRestApi())
+    .then(function (client) {
+      return Promise.resolve(client.getToken())
+        .then(function (token) {
+          if (token || !shouldAuthorize) return token;
+          return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }))
+            .then(function (authorizedToken) {
+              if (authorizedToken) return authorizedToken;
+              return Promise.resolve(client.getToken());
+            });
+        });
+    });
+}
+
 function syncListTitle(t, list, limit, options) {
   options = options || {};
 
@@ -52,22 +67,20 @@ function syncListTitle(t, list, limit, options) {
   var cardCount = list.cards ? list.cards.length : 0;
   var nextName = buildLimitedListName(list.name, cardCount, lim);
 
-  if (!nextName || nextName === list.name) return Promise.resolve();
+  if (!list.id || !nextName || nextName === list.name) {
+    console.log('Skipping Trello list rename:', {
+      listId: list.id,
+      currentName: list.name,
+      nextName: nextName
+    });
+    return Promise.resolve();
+  }
   if (renameInFlightByListId[list.id] === nextName) return Promise.resolve();
   renameInFlightByListId[list.id] = nextName;
 
-  return Promise.resolve(t.getRestApi())
-    .then(function (client) {
-      if (options.authorize) {
-        return client.getToken().then(function (token) {
-          if (token) return token;
-          return client.authorize({ scope: 'read,write', expiration: 'never' });
-        });
-      }
-      return client.getToken();
-    })
+  return getRestToken(t, !!options.authorize)
     .then(function (token) {
-      if (!token) return null;
+      if (!token) throw new Error('Missing Trello REST token. Authorize the Power-Up first.');
       return renameListWithToken(list.id, nextName, token);
     })
     .catch(function (err) {
@@ -79,14 +92,13 @@ function syncListTitle(t, list, limit, options) {
       }
     });
 }
-
 console.log('Set List Limit setup');
 
 window.TrelloPowerUp.initialize({
   'authorization-status': function (t) {
     return Promise.resolve(t.getRestApi())
       .then(function (client) {
-        return client.isAuthorized();
+        return Promise.resolve(client.isAuthorized());
       })
       .then(function (authorized) {
         return { authorized: authorized };
