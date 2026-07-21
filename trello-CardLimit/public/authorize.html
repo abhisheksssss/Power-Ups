@@ -48,11 +48,24 @@
       t.sizeTo('#container').catch(function () {});
     });
 
+    // Pre-resolve the REST client at page load time (asynchronously).
+    // This way we can call .authorize() synchronously inside the click handler,
+    // preserving the browser's user-gesture context so the popup isn't blocked.
+    var resolvedClient = null;
+    Promise.resolve(t.getRestApi()).then(function (client) {
+      resolvedClient = client;
+    });
+
     document.getElementById('authorizeBtn').addEventListener('click', function () {
-      Promise.resolve(t.getRestApi())
-        .then(function (client) {
-          return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }));
-        })
+      if (!resolvedClient) {
+        // Client not ready yet (very rare — page loaded in <1ms)
+        t.alert({ message: 'Not ready yet, please try again.', duration: 3 });
+        return;
+      }
+
+      // Call authorize() SYNCHRONOUSLY in the click handler — no .then() before it.
+      // This is the only way to avoid the browser's popup blocker.
+      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
         .then(function () {
           return t.closePopup();
         })
