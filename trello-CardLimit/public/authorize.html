@@ -26,12 +26,16 @@
       cursor: pointer;
     }
     button:hover { background: #0065FF; }
+    button:disabled { background: #8C9BAB; cursor: not-allowed; }
     #statusMsg {
       display: none;
-      font-size: 13px;
+      font-size: 12px;
       color: #5E6C84;
-      padding: 8px 0;
+      padding: 4px 0;
+      line-height: 1.5;
     }
+    #statusMsg.success { color: #22c55e; }
+    #statusMsg.error   { color: #ef4444; }
   </style>
 </head>
 <body>
@@ -55,64 +59,50 @@
       t.sizeTo('#container').catch(function () {});
     });
 
-    // Pre-resolve the REST API client before the user clicks anything.
-    // Once resolved, we call .authorize() DIRECTLY inside the click handler —
-    // no .then() chains before it — so the browser's user-gesture context is preserved.
-    var resolvedClient = null;
-    Promise.resolve(t.getRestApi()).then(function (client) {
-      console.log("THis is client",client)
-      resolvedClient = client;
-    });
-
     var statusEl = document.getElementById('statusMsg');
-    var authBtn = document.getElementById('authorizeBtn');
+    var authBtn  = document.getElementById('authorizeBtn');
 
-    function showStatus(msg) {
+    function showStatus(msg, type) {
       statusEl.textContent = msg;
+      statusEl.className   = type || '';
       statusEl.style.display = 'block';
       t.sizeTo('#container').catch(function () {});
     }
 
-    authBtn.addEventListener('click', function () {
-  if (!resolvedClient) {
-    showStatus('Not ready yet, please try again in a moment.');
-    return;
-  }
-
-  authBtn.disabled = true;
-  authBtn.textContent = 'Authorizing...';
-
-  showStatus('A Trello window will open. Please approve access there. ---');
-
-  console.log("Before authorize");
-
-let promise;
-
-try {
-   promise=resolvedClient.authorize({
-    scope: "read,write",
-    expiration: "never",
-    returnUrl:  "https://power-ups-dvon.vercel.app/auth-success.html"
-});
-
-    console.log("After authorize");
-    console.log("Returned:", promise);
-
-} catch (e) {
-    console.error("Synchronous error:", e);
-}
-
-if (promise) {
-    promise.then(() => {
-        console.log("SUCCESS");
-    }).catch(err => {
-        console.error("FAILED", err);
+    // Pre-resolve the REST API client at page load (async).
+    // Stored in resolvedClient so the click handler can call .authorize()
+    // synchronously — preserving the browser's user-gesture context.
+    var resolvedClient = null;
+    Promise.resolve(t.getRestApi()).then(function (client) {
+      resolvedClient = client;
     });
-}
-}
-  
-  
-  );
+
+    authBtn.addEventListener('click', function () {
+      if (!resolvedClient) {
+        showStatus('Not ready yet — please try again.', 'error');
+        return;
+      }
+
+      authBtn.disabled   = true;
+      authBtn.textContent = 'Authorizing…';
+      showStatus('Waiting for Trello authorization…');
+
+      // authorize() is called SYNCHRONOUSLY here (resolvedClient was set
+      // asynchronously at page load, before any click).
+      // NOTE: This only works when this page is opened via Trello's
+      // show-authorization capability (Power-Up settings → Connect Account).
+      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
+        .then(function () {
+          showStatus('✅ Authorized! Closing…', 'success');
+          setTimeout(function () { t.closePopup(); }, 1000);
+        })
+        .catch(function (err) {
+          console.error('Authorization failed:', err);
+          authBtn.disabled   = false;
+          authBtn.textContent = 'Try Again';
+          showStatus('Authorization failed or was cancelled.', 'error');
+        });
+    });
   </script>
 </body>
 </html>
