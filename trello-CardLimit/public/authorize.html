@@ -89,7 +89,7 @@
 let promise;
 
 try {
-    resolvedClient.authorize({
+   promise=resolvedClient.authorize({
     scope: "read,write",
     expiration: "never",
     returnUrl:  "https://power-ups-dvon.vercel.app/auth-success.html"
