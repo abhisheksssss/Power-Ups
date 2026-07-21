@@ -84,6 +84,9 @@
         '&callback_method=fragment' +
         '&return_url=' + encodeURIComponent(returnUrl);
 
+
+console.log("Hello");
+
       // We MUST use t.authorize(authUrl, opts) here!
       // client.authorize() ONLY works from the Trello Settings menu. It hangs everywhere else.
       t.authorize(authUrl, {
