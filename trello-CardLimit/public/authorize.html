@@ -138,8 +138,7 @@ const authUrl =
       // asynchronously at page load, before any click).
       // NOTE: This only works when this page is opened via Trello's
       // show-authorization capability (Power-Up settings → Connect Account).
-      resolvedClient.authorize(authUrl,{ height: 680,
-        width: 580})
+      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
         .then(function () {
           showStatus('✅ Authorized! Closing…', 'success');
           setTimeout(function () { t.closePopup(); }, 1000);
