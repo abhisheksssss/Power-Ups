@@ -62,11 +62,12 @@
         t.alert({ message: 'Not ready yet, please try again.', duration: 3 });
         return;
       }
-
+      console.log("I'm in");
       // Call authorize() SYNCHRONOUSLY in the click handler — no .then() before it.
       // This is the only way to avoid the browser's popup blocker.
       resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
         .then(function () {
+          console.log("Authorization successful");
           return t.closePopup();
         })
         .catch(function (err) {
