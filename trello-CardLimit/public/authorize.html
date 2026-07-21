@@ -112,6 +112,16 @@
       resolvedClient = client;
     });
 
+const authUrl =
+  "https://trello.com/1/authorize" +
+  "?expiration=never" +
+  "&scope=read,write" +
+  "&response_type=token" +
+  "&key=" + "1bde546d7e6e1918bea4131b50dd462d" +
+  "&callback_method=fragment" +
+  "&return_url=" + encodeURIComponent("https://power-ups-dvon.vercel.app" + "/auth-success.html");
+
+
     authBtn.addEventListener('click', function () {
       if (!resolvedClient) {
         showStatus('Not ready yet — please try again.', 'error');
@@ -122,11 +132,14 @@
       authBtn.textContent = 'Authorizing…';
       showStatus('Waiting for Trello authorization…');
 
+
+
       // authorize() is called SYNCHRONOUSLY here (resolvedClient was set
       // asynchronously at page load, before any click).
       // NOTE: This only works when this page is opened via Trello's
       // show-authorization capability (Power-Up settings → Connect Account).
-      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
+      resolvedClient.authorize(authUrl,{ height: 680,
+        width: 580})
         .then(function () {
           showStatus('✅ Authorized! Closing…', 'success');
           setTimeout(function () { t.closePopup(); }, 1000);
