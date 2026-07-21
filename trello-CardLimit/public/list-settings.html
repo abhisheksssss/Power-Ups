@@ -298,15 +298,25 @@
     }
 
     function getRestToken(shouldAuthorize) {
+      console.log('getRestToken called with shouldAuthorize:', shouldAuthorize);
       return Promise.resolve(t.getRestApi())
         .then(function (client) {
+          console.log('Rest client obtained');
           return Promise.resolve(client.getToken())
             .then(function (token) {
+              console.log('Current token:', token ? 'Exists' : 'None');
               if (token || !shouldAuthorize) return token;
+              
+              console.log('Calling client.authorize()...');
               return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }))
                 .then(function (authorizedToken) {
+                  console.log('client.authorize() resolved with:', authorizedToken ? 'Exists' : 'None');
                   if (authorizedToken) return authorizedToken;
                   return Promise.resolve(client.getToken());
+                })
+                .catch(function(err) {
+                  console.error('Error during client.authorize():', err);
+                  throw err;
                 });
             });
         });
@@ -430,26 +440,20 @@
     document.getElementById('saveBtn').addEventListener('click', function () {
       console.log('Saving:', limitVal);
 
-      var nextName = null;
+      var nextName = buildLimitedListName(listName, cardCount, limitVal);
       var token = null;
 
-      t.list('id', 'name', 'cards')
-        .then(function (list) {
-          listId = list.id;
-          listName = list.name;
-          cardCount = list.cards ? list.cards.length : 0;
-          nextName = buildLimitedListName(listName, cardCount, limitVal);
+      console.log('Save target list:', {
+        listId: listId,
+        currentName: listName,
+        nextName: nextName,
+        cardCount: cardCount,
+        limit: limitVal
+      });
 
-          console.log('Save target list:', {
-            listId: listId,
-            currentName: listName,
-            nextName: nextName,
-            cardCount: cardCount,
-            limit: limitVal
-          });
-
-          return getRestToken(true);
-        })
+      // We call getRestToken synchronously inside the click handler
+      // so the browser's popup blocker doesn't block the auth window.
+      getRestToken(true)
         .then(function (restToken) {
           token = restToken;
           return saveLimit();
