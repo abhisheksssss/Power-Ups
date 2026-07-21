@@ -248,6 +248,15 @@
     var cardCount = 0;
     var listId = null;
     var listName = '';
+    
+    // Auth state pre-loaded
+    var restClient = t.getRestApi();
+    var hasToken = false;
+
+    // Check token as soon as possible
+    restClient.getToken().then(function(token) {
+      hasToken = !!token;
+    });
 
     function getColor(count, limit) {
       if (limit > 0 && count > limit) return '#ef4444';
@@ -297,29 +306,9 @@
       });
     }
 
+    // This function is no longer needed since we inline the logic to preserve sync context
     function getRestToken(shouldAuthorize) {
-      console.log('getRestToken called with shouldAuthorize:', shouldAuthorize);
-      return Promise.resolve(t.getRestApi())
-        .then(function (client) {
-          console.log('Rest client obtained');
-          return Promise.resolve(client.getToken())
-            .then(function (token) {
-              console.log('Current token:', token ? 'Exists' : 'None');
-              if (token || !shouldAuthorize) return token;
-              
-              console.log('Calling client.authorize()...');
-              return Promise.resolve(client.authorize({ scope: 'read,write', expiration: 'never' }))
-                .then(function (authorizedToken) {
-                  console.log('client.authorize() resolved with:', authorizedToken ? 'Exists' : 'None');
-                  if (authorizedToken) return authorizedToken;
-                  return Promise.resolve(client.getToken());
-                })
-                .catch(function(err) {
-                  console.error('Error during client.authorize():', err);
-                  throw err;
-                });
-            });
-        });
+      return restClient.getToken();
     }
 
     function authorizeAndRenameList(nextName, token) {
@@ -451,16 +440,26 @@
         limit: limitVal
       });
 
-      // We call getRestToken synchronously inside the click handler
-      // so the browser's popup blocker doesn't block the auth window.
-      getRestToken(true)
-        .then(function (restToken) {
-          token = restToken;
-          return saveLimit();
-        })
+      // To prevent popup blockers, client.authorize MUST be called synchronously
+      // in the click handler (no awaits/thens before it).
+      var authPromise = Promise.resolve();
+      if (!hasToken) {
+        console.log('No token found, calling client.authorize() synchronously...');
+        authPromise = restClient.authorize({ scope: 'read,write', expiration: 'never' });
+      }
+
+      authPromise
         .then(function () {
-          console.log('Saved successfully');
-          return authorizeAndRenameList(nextName, token);
+          // After authorization (or immediately if already authorized), get the token
+          return restClient.getToken();
+        })
+        .then(function (token) {
+          if (!token) throw new Error('No REST token available after authorization flow.');
+          
+          return saveLimit().then(function() {
+            console.log('Saved limit successfully');
+            return authorizeAndRenameList(nextName, token);
+          });
         })
         .then(function () {
           t.closePopup();
