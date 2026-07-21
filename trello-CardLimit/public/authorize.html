@@ -70,34 +70,30 @@
       t.sizeTo('#container').catch(function () {});
     }
 
+    var resolvedClient = null;
+    Promise.resolve(t.getRestApi()).then(function (client) {
+      resolvedClient = client;
+    });
+
     authBtn.addEventListener('click', function () {
+      if (!resolvedClient) {
+        showStatus('Not ready yet — please try again.', 'error');
+        return;
+      }
+
       authBtn.disabled   = true;
       authBtn.textContent = 'Authorizing…';
       showStatus('Waiting for Trello authorization…');
 
-      var returnUrl = BASE_URL + '/auth-success.html';
-      var authUrl = 'https://trello.com/1/authorize' +
-        '?expiration=never' +
-        '&name=' + encodeURIComponent(APP_NAME) +
-        '&scope=read,write' +
-        '&key=' + TRELLO_API_KEY +
-        '&callback_method=fragment' +
-        '&return_url=' + encodeURIComponent(returnUrl);
-
-
-console.log("Hello");
-
-      // We MUST use t.authorize(authUrl, opts) here!
-      // client.authorize() ONLY works from the Trello Settings menu. It hangs everywhere else.
-      t.authorize(authUrl, {
-        height: 680,
-        width: 580,
-        validToken: function(token) { return !!token; }
+      // Trello explicitly blocks authorize() calls from custom popups.
+      // This will only work if opened from the Trello Settings "Connect Account" button.
+      resolvedClient.authorize({
+        scope: 'read,write',
+        expiration: 'never',
+        returnUrl: BASE_URL + '/auth-success.html'
       })
-      .then(function (token) {
+      .then(function () {
         showStatus('✅ Authorized! Closing…', 'success');
-        
-        // Wait a second so the user can see the success message
         setTimeout(function () { t.closePopup(); }, 1000);
       })
       .catch(function (err) {

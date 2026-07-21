@@ -1,4 +1,4 @@
-﻿var BASE_URL = 'https://power-ups-dvon.vercel.app';
+var BASE_URL = 'https://power-ups-dvon.vercel.app';
 var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
 var APP_NAME = 'List Limit Power-Up';
 var renameInFlightByListId = {};
