@@ -194,22 +194,9 @@
     .auth-banner p {
       font-size: 12px;
       color: #93c5fd;
-      margin: 0 0 10px 0;
+      margin: 0;
       line-height: 1.5;
     }
-    .auth-banner-btn {
-      width: 100%;
-      height: 36px;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .auth-banner-btn:hover { background: #3b82f6; }
   </style>
 </head>
 <body>
@@ -264,8 +251,7 @@
 
   <!-- Authorization banner: shown when no REST token exists -->
   <div id="authBanner" class="auth-banner">
-    <p>🔐 List renaming needs one-time authorization. Click below, then save again.</p>
-    <button class="auth-banner-btn" id="authorizeBtn">Authorize List Renaming</button>
+    <p>🔐 <strong>One-time setup needed.</strong> Close this popup, then open the list menu and click <strong>"🔐 Authorize List Renaming"</strong> to connect your account.</p>
   </div>
 
   <button class="save-btn" id="saveBtn">Save</button>
@@ -296,15 +282,6 @@
         sizeToContent();
       }
     }).catch(function() {});
-
-    // Authorize button: opens authorize.html popup synchronously on click
-    document.getElementById('authorizeBtn').addEventListener('click', function() {
-      t.popup({
-        title: 'Authorize List Renaming',
-        url: BASE_URL + '/authorize.html',
-        height: 180
-      });
-    });
 
     function getColor(count, limit) {
       if (limit > 0 && count > limit) return '#ef4444';

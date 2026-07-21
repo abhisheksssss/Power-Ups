@@ -141,30 +141,54 @@ window.TrelloPowerUp.initialize({
 
           syncListTitle(t, list, limit);
 
-          return [{
-            text: 'Set Card Limit',
-            callback: function (t) {
-              if (!limit) {
+          // Check if the Power-Up has been authorized (REST token present).
+          // If not, show an Authorize action first.
+          return getRestToken(t, false).then(function (token) {
+            var actions = [];
+
+            if (!token) {
+              actions.push({
+                text: '🔐 Authorize List Renaming',
+                callback: function (t) {
+                  // Open authorize.html from the connector (powerup.js) context.
+                  // This is the same as the show-authorization flow and allows
+                  // client.authorize() to work inside the popup.
+                  return t.popup({
+                    title: 'Authorize List Rename',
+                    url: BASE_URL + '/authorize.html',
+                    height: 220
+                  });
+                }
+              });
+            }
+
+            actions.push({
+              text: 'Set Card Limit',
+              callback: function (t) {
+                if (!limit) {
+                  return t.popup({
+                    title: 'Set Card Limit',
+                    url: BASE_URL + '/list-settings.html',
+                    height: 380
+                  });
+                }
+                if (cardCount > lim) {
+                  return t.popup({
+                    title: 'Capacity Exceeded',
+                    url: BASE_URL + '/warning-popup.html?listId=' + encodeURIComponent(list.id),
+                    height: 380
+                  });
+                }
                 return t.popup({
                   title: 'Set Card Limit',
                   url: BASE_URL + '/list-settings.html',
                   height: 380
                 });
               }
-              if (cardCount > lim) {
-                return t.popup({
-                  title: 'Capacity Exceeded',
-                  url: BASE_URL + '/warning-popup.html?listId=' + encodeURIComponent(list.id),
-                  height: 380
-                });
-              }
-              return t.popup({
-                title: 'Set Card Limit',
-                url: BASE_URL + '/list-settings.html',
-                height: 380
-              });
-            }
-          }];
+            });
+
+            return actions;
+          });
         });
     }).catch(function (err) {
       console.error(err);
@@ -180,6 +204,7 @@ window.TrelloPowerUp.initialize({
       }];
     });
   },
+
 
   'card-badges': function (t) {
     return t.list('id', 'name', 'cards').then(function (list) {

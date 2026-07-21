@@ -26,6 +26,12 @@
       cursor: pointer;
     }
     button:hover { background: #0065FF; }
+    #statusMsg {
+      display: none;
+      font-size: 13px;
+      color: #5E6C84;
+      padding: 8px 0;
+    }
   </style>
 </head>
 <body>
@@ -33,13 +39,13 @@
     <h1>Authorize List Rename</h1>
     <p>This Power-Up needs Trello write access to rename lists with their card count.</p>
     <button id="authorizeBtn">Authorize</button>
+    <div id="statusMsg"></div>
   </div>
 
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <script>
     var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
     var APP_NAME = 'Set-List-Limit';
-    var BASE_URL = 'https://power-ups-dvon.vercel.app';
     var t = window.TrelloPowerUp.iframe({
       appKey: TRELLO_API_KEY,
       appName: APP_NAME
@@ -49,26 +55,49 @@
       t.sizeTo('#container').catch(function () {});
     });
 
-    document.getElementById('authorizeBtn').addEventListener('click', function () {
-      // Navigate the CURRENT iframe directly to the Trello auth page.
-      // This is the only approach that works reliably in sandboxed Power-Up iframes:
-      // - window.open() is blocked (no allow-popups in sandbox)
-      // - client.authorize() internally uses window.open() or postMessage that Trello
-      //   only permits from the show-authorization context
-      // - window.location.href navigation is ALWAYS allowed in any frame
-      //
-      // After the user approves, Trello redirects back to auth-success.html
-      // (on our domain) with the token in the URL hash fragment.
-      var returnUrl = BASE_URL + '/auth-success.html';
-      var authUrl = 'https://trello.com/1/authorize' +
-        '?expiration=never' +
-        '&name=' + encodeURIComponent(APP_NAME) +
-        '&scope=read,write' +
-        '&response_type=token' +
-        '&key=' + TRELLO_API_KEY +
-        '&return_url=' + encodeURIComponent(returnUrl);
+    // Pre-resolve the REST API client before the user clicks anything.
+    // Once resolved, we call .authorize() DIRECTLY inside the click handler —
+    // no .then() chains before it — so the browser's user-gesture context is preserved.
+    var resolvedClient = null;
+    Promise.resolve(t.getRestApi()).then(function (client) {
+      resolvedClient = client;
+    });
 
-      window.location.href = authUrl;
+    var statusEl = document.getElementById('statusMsg');
+    var authBtn = document.getElementById('authorizeBtn');
+
+    function showStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.style.display = 'block';
+      t.sizeTo('#container').catch(function () {});
+    }
+
+    authBtn.addEventListener('click', function () {
+      if (!resolvedClient) {
+        showStatus('Not ready yet, please try again in a moment.');
+        return;
+      }
+
+      authBtn.disabled = true;
+      authBtn.textContent = 'Authorizing…';
+      showStatus('A Trello window will open — please approve access there.');
+
+      // Call authorize() synchronously in the click handler.
+      // This works because resolvedClient was set up asynchronously at page load,
+      // so no async operations happen between the click and this call.
+      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
+        .then(function () {
+          showStatus('✅ Authorized successfully! You can now save limits.');
+          authBtn.textContent = 'Authorized ✓';
+          // Close popup after short delay so user sees the success message
+          setTimeout(function () { t.closePopup(); }, 1200);
+        })
+        .catch(function (err) {
+          console.error('Authorization failed:', err);
+          authBtn.disabled = false;
+          authBtn.textContent = 'Authorize';
+          showStatus('Authorization failed or was cancelled. Please try again.');
+        });
     });
   </script>
 </body>
