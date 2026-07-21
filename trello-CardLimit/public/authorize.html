@@ -73,32 +73,40 @@
     }
 
     authBtn.addEventListener('click', function () {
-      if (!resolvedClient) {
-        showStatus('Not ready yet, please try again in a moment.');
-        return;
-      }
+  if (!resolvedClient) {
+    showStatus('Not ready yet, please try again in a moment.');
+    return;
+  }
 
-      authBtn.disabled = true;
-      authBtn.textContent = 'Authorizing…';
-      showStatus('A Trello window will open — please approve access there.');
+  authBtn.disabled = true;
+  authBtn.textContent = 'Authorizing...';
 
-      // Call authorize() synchronously in the click handler.
-      // This works because resolvedClient was set up asynchronously at page load,
-      // so no async operations happen between the click and this call.
-      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
-        .then(function () {
-          showStatus('✅ Authorized successfully! You can now save limits.');
-          authBtn.textContent = 'Authorized ✓';
-          // Close popup after short delay so user sees the success message
-          setTimeout(function () { t.closePopup(); }, 1200);
-        })
-        .catch(function (err) {
-          console.error('Authorization failed:', err);
-          authBtn.disabled = false;
-          authBtn.textContent = 'Authorize';
-          showStatus('Authorization failed or was cancelled. Please try again.');
-        });
-    });
+  showStatus('A Trello window will open. Please approve access there.');
+
+  resolvedClient.authorize({
+    scope: 'read,write',
+    expiration: 'never'
+  })
+  .then(function () {
+    showStatus('✅ Authorized successfully! You can now save limits.');
+    authBtn.textContent = 'Authorized ✓';
+
+    setTimeout(function () {
+      t.closePopup();
+    }, 1200);
+  })
+  .catch(function (err) {
+    console.error('Authorization failed:', err);
+
+    authBtn.disabled = false;
+    authBtn.textContent = 'Authorize';
+
+    showStatus('Authorization failed or was cancelled. Please try again.');
+  });
+}
+  
+  
+  );
   </script>
 </body>
 </html>
