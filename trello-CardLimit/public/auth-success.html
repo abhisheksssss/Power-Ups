@@ -18,33 +18,48 @@
 <body>
   <p id="msg">Completing authorization…</p>
 
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <script>
-    var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
-    var APP_NAME = 'Set-List-Limit';
+    let authorize;
 
-    // Read the token from the URL hash that Trello appended after authorization.
-    // e.g. https://our-domain/auth-success.html#token=abc123
-    var params = new URLSearchParams(window.location.hash.substring(1));
-    var token = params.get('token');
+    try {
+      if (window.opener && typeof window.opener.authorize === "function") {
+        authorize = window.opener.authorize;
+      }
+    } catch (e) {
+      // Security settings are preventing this, fall back to local storage.
+    }
+
+    // Trello auth puts the token in the hash if callback_method=fragment.
+    let token = "";
+    const hash = window.location.hash;
+    if (hash) {
+      const match = hash.match(/token=([^&]*)/);
+      if (match) {
+        token = match[1];
+      }
+    }
 
     if (token) {
-      // Store the token in localStorage with the key the SDK expects.
-      // The Trello Power-Up SDK reads the token via client.getToken() which
-      // looks for 'trello_token' in localStorage.
+      // Store under 'trello_token' so our REST API client finds it
       localStorage.setItem('trello_token', token);
-      console.log('Authorization successful — token stored.');
-
-      // Initialize the Trello iframe connection and close the popup.
-      var t = window.TrelloPowerUp.iframe({
-        appKey: TRELLO_API_KEY,
-        appName: APP_NAME
-      });
-      t.closePopup();
+      
+      // Store under 'token' for t.authorize's polling fallback
+      localStorage.setItem('token', token);
+      
+      // Call the authorize function exposed by t.authorize (if available)
+      if (authorize) {
+        authorize(token);
+      }
+      
+      document.getElementById('msg').textContent = 'Authorization successful! Closing...';
     } else {
       document.getElementById('msg').textContent = 'Authorization failed — no token received. Please try again.';
       console.error('auth-success.html: no token found in URL hash.', window.location.href);
     }
+
+    setTimeout(function () {
+      window.close();
+    }, 1000);
   </script>
 </body>
 </html>
