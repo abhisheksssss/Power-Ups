@@ -54,6 +54,9 @@
     var resolvedClient = null;
     Promise.resolve(t.getRestApi()).then(function (client) {
       resolvedClient = client;
+      console.log("REST API Client", resolvedClient);
+    }).catch(function(err) {
+      console.log("Error in getting rest api", err);
     });
 
     document.getElementById('authorizeBtn').addEventListener('click', function () {
