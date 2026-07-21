@@ -1,4 +1,4 @@
-var BASE_URL = 'https://power-ups-dvon.vercel.app';
+﻿var BASE_URL = 'https://power-ups-dvon.vercel.app';
 var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
 var APP_NAME = 'List Limit Power-Up';
 var renameInFlightByListId = {};
@@ -141,42 +141,23 @@ window.TrelloPowerUp.initialize({
 
           syncListTitle(t, list, limit);
 
-          return getRestToken(t, false).then(function (token) {
-            var actions = [];
-
-            if (!token) {
-              actions.push({
-                text: '🔐 Authorize List Renaming',
-                callback: function (t) {
-                  return t.popup({
-                    title: 'Authorize List Rename',
-                    url: BASE_URL + '/authorize.html',
-                    height: 220
-                  });
-                }
-              });
-            }
-
-            actions.push({
-              text: 'Set Card Limit',
-              callback: function (t) {
-                if (cardCount > lim && limit) {
-                  return t.popup({
-                    title: 'Capacity Exceeded',
-                    url: BASE_URL + '/warning-popup.html?listId=' + encodeURIComponent(list.id),
-                    height: 380
-                  });
-                }
+          return [{
+            text: 'Set Card Limit',
+            callback: function (t) {
+              if (cardCount > lim && limit) {
                 return t.popup({
-                  title: 'Set Card Limit',
-                  url: BASE_URL + '/list-settings.html',
+                  title: 'Capacity Exceeded',
+                  url: BASE_URL + '/warning-popup.html?listId=' + encodeURIComponent(list.id),
                   height: 380
                 });
               }
-            });
-
-            return actions;
-          });
+              return t.popup({
+                title: 'Set Card Limit',
+                url: BASE_URL + '/list-settings.html',
+                height: 380
+              });
+            }
+          }];
         });
     }).catch(function (err) {
       console.error(err);

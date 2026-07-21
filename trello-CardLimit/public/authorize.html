@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Authorize List Rename</title>
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 16px;
@@ -12,9 +16,25 @@
       color: #172B4D;
       background: #FFFFFF;
     }
-    #container { display: grid; gap: 12px; }
-    h1 { margin: 0; font-size: 16px; line-height: 1.3; }
-    p { margin: 0; color: #5E6C84; font-size: 13px; line-height: 1.5; }
+
+    #container {
+      display: grid;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    p {
+      margin: 0;
+      color: #5E6C84;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     button {
       height: 36px;
       border: 0;
@@ -25,8 +45,16 @@
       font-weight: 600;
       cursor: pointer;
     }
-    button:hover { background: #0065FF; }
-    button:disabled { background: #8C9BAB; cursor: not-allowed; }
+
+    button:hover {
+      background: #0065FF;
+    }
+
+    button:disabled {
+      background: #8C9BAB;
+      cursor: not-allowed;
+    }
+
     #statusMsg {
       display: none;
       font-size: 12px;
@@ -34,10 +62,17 @@
       padding: 4px 0;
       line-height: 1.5;
     }
-    #statusMsg.success { color: #22c55e; }
-    #statusMsg.error   { color: #ef4444; }
+
+    #statusMsg.success {
+      color: #22c55e;
+    }
+
+    #statusMsg.error {
+      color: #ef4444;
+    }
   </style>
 </head>
+
 <body>
   <div id="container">
     <h1>Authorize List Rename</h1>
@@ -50,60 +85,60 @@
   <script>
     var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
     var APP_NAME = 'Set-List-Limit';
-    var BASE_URL = 'https://power-ups-dvon.vercel.app';
     var t = window.TrelloPowerUp.iframe({
       appKey: TRELLO_API_KEY,
       appName: APP_NAME
     });
 
     t.render(function () {
-      t.sizeTo('#container').catch(function () {});
+      t.sizeTo('#container').catch(function () { });
     });
 
     var statusEl = document.getElementById('statusMsg');
-    var authBtn  = document.getElementById('authorizeBtn');
+    var authBtn = document.getElementById('authorizeBtn');
 
     function showStatus(msg, type) {
       statusEl.textContent = msg;
-      statusEl.className   = type || '';
+      statusEl.className = type || '';
       statusEl.style.display = 'block';
-      t.sizeTo('#container').catch(function () {});
+      t.sizeTo('#container').catch(function () { });
     }
 
+    // Pre-resolve the REST API client at page load (async).
+    // Stored in resolvedClient so the click handler can call .authorize()
+    // synchronously — preserving the browser's user-gesture context.
+    var resolvedClient = null;
+    Promise.resolve(t.getRestApi()).then(function (client) {
+      resolvedClient = client;
+    });
+
     authBtn.addEventListener('click', function () {
-      authBtn.disabled   = true;
+      if (!resolvedClient) {
+        showStatus('Not ready yet — please try again.', 'error');
+        return;
+      }
+
+      authBtn.disabled = true;
       authBtn.textContent = 'Authorizing…';
       showStatus('Waiting for Trello authorization…');
 
-      var returnUrl = BASE_URL + '/auth-success.html';
-      var authUrl = 'https://trello.com/1/authorize' +
-        '?expiration=never' +
-        '&name=' + encodeURIComponent(APP_NAME) +
-        '&scope=read,write' +
-        '&key=' + TRELLO_API_KEY +
-        '&callback_method=fragment' +
-        '&return_url=' + encodeURIComponent(returnUrl);
-
-      // t.authorize is the official SDK method for opening an auth window from a Power-Up popup.
-      // It handles bypassing popup blockers and sets up window.opener.authorize for the callback.
-      t.authorize(authUrl, {
-        height: 680,
-        width: 580,
-        validToken: function(token) { return !!token; }
-      })
-      .then(function (token) {
-        showStatus('✅ Authorized! Closing…', 'success');
-        
-        // Wait a second so the user can see the success message
-        setTimeout(function () { t.closePopup(); }, 1000);
-      })
-      .catch(function (err) {
-        console.error('Authorization failed:', err);
-        authBtn.disabled   = false;
-        authBtn.textContent = 'Try Again';
-        showStatus('Authorization failed or was cancelled.', 'error');
-      });
+      // authorize() is called SYNCHRONOUSLY here (resolvedClient was set
+      // asynchronously at page load, before any click).
+      // NOTE: This only works when this page is opened via Trello's
+      // show-authorization capability (Power-Up settings → Connect Account).
+      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
+        .then(function () {
+          showStatus('✅ Authorized! Closing…', 'success');
+          setTimeout(function () { t.closePopup(); }, 1000);
+        })
+        .catch(function (err) {
+          console.error('Authorization failed:', err);
+          authBtn.disabled = false;
+          authBtn.textContent = 'Try Again';
+          showStatus('Authorization failed or was cancelled.', 'error');
+        });
     });
   </script>
 </body>
+
 </html>
