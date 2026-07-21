@@ -49,64 +49,27 @@
       t.sizeTo('#container').catch(function () {});
     });
 
-    // Pre-resolve the REST client so we can call storeToken() after auth
-    var resolvedClient = null;
-    Promise.resolve(t.getRestApi()).then(function (client) {
-      resolvedClient = client;
-    });
-
     document.getElementById('authorizeBtn').addEventListener('click', function () {
-      // Build the Trello OAuth URL manually.
-      // We use window.open() DIRECTLY here (not through the SDK) so the browser
-      // treats it as a synchronous user-initiated popup and doesn't block it.
+      // Navigate the CURRENT iframe directly to the Trello auth page.
+      // This is the only approach that works reliably in sandboxed Power-Up iframes:
+      // - window.open() is blocked (no allow-popups in sandbox)
+      // - client.authorize() internally uses window.open() or postMessage that Trello
+      //   only permits from the show-authorization context
+      // - window.location.href navigation is ALWAYS allowed in any frame
+      //
+      // After the user approves, Trello redirects back to auth-success.html
+      // (on our domain) with the token in the URL hash fragment.
       var returnUrl = BASE_URL + '/auth-success.html';
       var authUrl = 'https://trello.com/1/authorize' +
         '?expiration=never' +
         '&name=' + encodeURIComponent(APP_NAME) +
-        '&scope=read%2Cwrite' +
+        '&scope=read,write' +
         '&response_type=token' +
         '&key=' + TRELLO_API_KEY +
-        '&callback_method=postMessage' +
         '&return_url=' + encodeURIComponent(returnUrl);
 
-      var authWindow = window.open(authUrl, 'trello-auth', 'width=600,height=700,left=200,top=100');
-
-      if (!authWindow) {
-        // Popup was blocked by the browser
-        console.error('Popup was blocked. Allow popups for this site.');
-        t.alert({ message: 'Please allow popups for this site and try again.', duration: 6 });
-        return;
-      }
-
-      // Listen for the token sent back from auth-success.html
-      function handleAuthMessage(event) {
-        if (!event.data || event.data.type !== 'trello-oauth' || !event.data.token) return;
-
-        window.removeEventListener('message', handleAuthMessage);
-        var token = event.data.token;
-        console.log('Token received, storing...');
-
-        // Store token via SDK client if available, otherwise use localStorage directly
-        var storePromise;
-        if (resolvedClient && typeof resolvedClient.storeToken === 'function') {
-          storePromise = Promise.resolve(resolvedClient.storeToken(token));
-        } else {
-          localStorage.setItem('trello_token', token);
-          storePromise = Promise.resolve();
-        }
-
-        storePromise.then(function () {
-          console.log('Token stored successfully.');
-          t.closePopup();
-        }).catch(function (err) {
-          console.error('Error storing token:', err);
-          t.alert({ message: 'Authorization succeeded but token could not be saved.', duration: 5 });
-        });
-      }
-
-      window.addEventListener('message', handleAuthMessage);
+      window.location.href = authUrl;
     });
   </script>
 </body>
 </html>
-
