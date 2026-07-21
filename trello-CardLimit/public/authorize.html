@@ -81,28 +81,32 @@
   authBtn.disabled = true;
   authBtn.textContent = 'Authorizing...';
 
-  showStatus('A Trello window will open. Please approve access there.');
+  showStatus('A Trello window will open. Please approve access there. ---');
 
-  resolvedClient.authorize({
-    scope: 'read,write',
-    expiration: 'never'
-  })
-  .then(function () {
-    showStatus('✅ Authorized successfully! You can now save limits.');
-    authBtn.textContent = 'Authorized ✓';
+  console.log("Before authorize");
 
-    setTimeout(function () {
-      t.closePopup();
-    }, 1200);
-  })
-  .catch(function (err) {
-    console.error('Authorization failed:', err);
+let promise;
 
-    authBtn.disabled = false;
-    authBtn.textContent = 'Authorize';
+try {
+    promise = resolvedClient.authorize({
+        scope: "read,write",
+        expiration: "never"
+    });
 
-    showStatus('Authorization failed or was cancelled. Please try again.');
-  });
+    console.log("After authorize");
+    console.log("Returned:", promise);
+
+} catch (e) {
+    console.error("Synchronous error:", e);
+}
+
+if (promise) {
+    promise.then(() => {
+        console.log("SUCCESS");
+    }).catch(err => {
+        console.error("FAILED", err);
+    });
+}
 }
   
   
