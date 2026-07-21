@@ -88,10 +88,11 @@
 let promise;
 
 try {
-    promise = resolvedClient.authorize({
-        scope: "read,write",
-        expiration: "never"
-    });
+    resolvedClient.authorize({
+    scope: "read,write",
+    expiration: "never",
+    returnUrl: BASE_URL + "/auth-success.html"
+});
 
     console.log("After authorize");
     console.log("Returned:", promise);
