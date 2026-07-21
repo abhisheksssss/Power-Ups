@@ -60,6 +60,7 @@
     // no .then() chains before it — so the browser's user-gesture context is preserved.
     var resolvedClient = null;
     Promise.resolve(t.getRestApi()).then(function (client) {
+      console.log("THis is client",client)
       resolvedClient = client;
     });
 
