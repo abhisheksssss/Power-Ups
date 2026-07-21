@@ -39,6 +39,7 @@
   <script>
     var TRELLO_API_KEY = '1bde546d7e6e1918bea4131b50dd462d';
     var APP_NAME = 'List Limit Power-Up';
+    var BASE_URL = 'https://power-ups-dvon.vercel.app';
     var t = window.TrelloPowerUp.iframe({
       appKey: TRELLO_API_KEY,
       appName: APP_NAME
@@ -48,36 +49,64 @@
       t.sizeTo('#container').catch(function () {});
     });
 
-    // Pre-resolve the REST client at page load time (asynchronously).
-    // This way we can call .authorize() synchronously inside the click handler,
-    // preserving the browser's user-gesture context so the popup isn't blocked.
+    // Pre-resolve the REST client so we can call storeToken() after auth
     var resolvedClient = null;
     Promise.resolve(t.getRestApi()).then(function (client) {
       resolvedClient = client;
-      console.log("REST API Client", resolvedClient);
-    }).catch(function(err) {
-      console.log("Error in getting rest api", err);
     });
 
     document.getElementById('authorizeBtn').addEventListener('click', function () {
-      if (!resolvedClient) {
-        // Client not ready yet (very rare — page loaded in <1ms)
-        t.alert({ message: 'Not ready yet, please try again.', duration: 3 });
+      // Build the Trello OAuth URL manually.
+      // We use window.open() DIRECTLY here (not through the SDK) so the browser
+      // treats it as a synchronous user-initiated popup and doesn't block it.
+      var returnUrl = BASE_URL + '/auth-success.html';
+      var authUrl = 'https://trello.com/1/authorize' +
+        '?expiration=never' +
+        '&name=' + encodeURIComponent(APP_NAME) +
+        '&scope=read%2Cwrite' +
+        '&response_type=token' +
+        '&key=' + TRELLO_API_KEY +
+        '&callback_method=postMessage' +
+        '&return_url=' + encodeURIComponent(returnUrl);
+
+      var authWindow = window.open(authUrl, 'trello-auth', 'width=600,height=700,left=200,top=100');
+
+      if (!authWindow) {
+        // Popup was blocked by the browser
+        console.error('Popup was blocked. Allow popups for this site.');
+        t.alert({ message: 'Please allow popups for this site and try again.', duration: 6 });
         return;
       }
-      console.log("I'm in");
-      // Call authorize() SYNCHRONOUSLY in the click handler — no .then() before it.
-      // This is the only way to avoid the browser's popup blocker.
-      resolvedClient.authorize({ scope: 'read,write', expiration: 'never' })
-        .then(function () {
-          console.log("Authorization successful");
-          return t.closePopup();
-        })
-        .catch(function (err) {
-          console.error('Authorization failed:', err);
-          t.alert({ message: 'Authorization failed', duration: 5 });
+
+      // Listen for the token sent back from auth-success.html
+      function handleAuthMessage(event) {
+        if (!event.data || event.data.type !== 'trello-oauth' || !event.data.token) return;
+
+        window.removeEventListener('message', handleAuthMessage);
+        var token = event.data.token;
+        console.log('Token received, storing...');
+
+        // Store token via SDK client if available, otherwise use localStorage directly
+        var storePromise;
+        if (resolvedClient && typeof resolvedClient.storeToken === 'function') {
+          storePromise = Promise.resolve(resolvedClient.storeToken(token));
+        } else {
+          localStorage.setItem('trello_token', token);
+          storePromise = Promise.resolve();
+        }
+
+        storePromise.then(function () {
+          console.log('Token stored successfully.');
+          t.closePopup();
+        }).catch(function (err) {
+          console.error('Error storing token:', err);
+          t.alert({ message: 'Authorization succeeded but token could not be saved.', duration: 5 });
         });
+      }
+
+      window.addEventListener('message', handleAuthMessage);
     });
   </script>
 </body>
 </html>
+

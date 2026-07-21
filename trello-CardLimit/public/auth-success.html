@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <title>Authorization Successful</title>
 </head>
-
 <body>
-
 <script>
-
-const token = new URLSearchParams(
+  var token = new URLSearchParams(
     window.location.hash.substring(1)
-).get("token");
+  ).get('token');
 
-if (window.opener) {
-    window.opener.postMessage({ type: "trello-oauth", token: token }, "https://trello.com");
-}
-window.close();
-
+  if (token && window.opener) {
+    // Post to "*" because the opener is our Power-Up iframe, not trello.com
+    window.opener.postMessage({ type: 'trello-oauth', token: token }, '*');
+  }
+  window.close();
 </script>
-
 </body>
-
 </html>
