@@ -114,12 +114,12 @@ html {
   <div id="loading">Loading editor...</div>
 
   <div id="editor-wrapper" style="display:none;">
-    <button id="change-permission-btn" onclick="openPermissions()">
-        🔒 Change Permission
-      </button>
     <textarea id="note-editor"></textarea>
 
     <div id="bottom-bar">
+      <button id="change-permission-btn" onclick="openPermissions()">
+        🔒 Change Permission
+      </button>
       <div style="display:flex;align-items:center;gap:10px;">
         <span id="status-msg">✓ Saved!</span>
         <button id="save-btn" onclick="saveNote()">Save</button>
