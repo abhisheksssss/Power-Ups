@@ -116,7 +116,7 @@ html {
 
   <div id="editor-wrapper" style="display:none;">
     <div style="display: flex; justify-content: flex-end; padding: 8px 8px 8px 0;">
-      <button id="change-permission-btn" onclick="openPermissions()">
+      <button id="change-permission-btn" onclick="openPermissions(event)">
         Change Permission
       </button>
     </div>
@@ -222,11 +222,12 @@ html {
     }
 
     // Open the Change Permission popup
-    function openPermissions() {
+    function openPermissions(e) {
       t.popup({
         title: 'Change Permission',
         url: './permission.html',
-        height: 350
+        height: 350,
+        mouseEvent: e
       });
     }
   </script>
