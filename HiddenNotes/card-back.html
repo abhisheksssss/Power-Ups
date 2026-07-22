@@ -125,20 +125,34 @@
     tinymce.init({
       selector: '#note-editor',
       height: 220,
-      menubar: true,
-      plugins: [
-        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
-      ],
-      toolbar:
-        'undo redo | bold italic underline | forecolor backcolor | ' +
-        'alignleft aligncenter alignright alignjustify | ' +
-        'image link | emoticons | more',
+      menubar: false,
+     plugins: [
+  'advlist',
+  'autolink',
+  'lists',
+  'link',
+  'image',
+  'charmap',
+  'anchor',
+  'searchreplace',
+  'visualblocks',
+  'code',
+  'fullscreen',
+  'insertdatetime',
+  'media',
+  'table',
+  'preview',
+  'wordcount',
+  'emoticons'
+],
+      toolbar: 'undo redo | bold italic underline | forecolor backcolor | '
+  + 'alignleft aligncenter alignright alignjustify | '
+  + 'image link | emoticons | more',
       toolbar_mode: 'wrap',
       skin: 'oxide',
       content_css: 'default',
       branding: false,
+      promotion: false,
       statusbar: false,
       resize: false,
       setup: function(editor) {
