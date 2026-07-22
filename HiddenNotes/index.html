@@ -14,37 +14,41 @@
 
       // Adds a section to the back of every card
       'card-back-section': function(t, options) {
-        // Check if the current member has permission to see notes
-        return t.get('card', 'shared', 'notePermissions').then(function(perms) {
-          return t.member('id').then(function(member) {
-            var memberId = member.id;
+        // Check creator + permissions to determine access
+        return Promise.all([
+          t.get('card', 'shared', 'noteCreator'),
+          t.get('card', 'shared', 'notePermissions'),
+          t.member('id')
+        ]).then(function(results) {
+          var creator = results[0];
+          var perms = results[1] || [];
+          var memberId = results[2].id;
 
-            // If no permissions set yet, everyone can see it
-            // If permissions are set, only allowed members can see it
-            var hasAccess = !perms || perms.length === 0 || perms.includes(memberId);
+          // If no creator is set, allow access so someone can create the first note
+          // If creator is set, allow access only for the creator or explicitly permitted members
+          var hasAccess = !creator || memberId === creator || perms.includes(memberId);
 
-            if (!hasAccess) {
-              return {
-                title: 'Hidden Notes',
-                icon: BASE_URL + 'icon.svg',
-                content: {
-                  type: 'iframe',
-                  url: t.signUrl(BASE_URL + 'no-access.html'),
-                  height: 60
-                }
-              };
-            }
-
+          if (!hasAccess) {
             return {
               title: 'Hidden Notes',
               icon: BASE_URL + 'icon.svg',
               content: {
                 type: 'iframe',
-                url: t.signUrl(BASE_URL + 'card-back.html'),
-                height: 320
+                url: t.signUrl(BASE_URL + 'no-access.html'),
+                height: 60
               }
             };
-          });
+          }
+
+          return {
+            title: 'Hidden Notes',
+            icon: BASE_URL + 'icon.svg',
+            content: {
+              type: 'iframe',
+              url: t.signUrl(BASE_URL + 'card-back.html'),
+              height: 320
+            }
+          };
         });
       }
 

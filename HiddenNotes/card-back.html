@@ -184,7 +184,26 @@ html {
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
 
-      t.set('card', 'shared', 'hiddenNote', content).then(function() {
+      // Check if a creator is already set
+      Promise.all([
+        t.get('card', 'shared', 'noteCreator'),
+        t.member('id')
+      ]).then(function(results) {
+        var existingCreator = results[0];
+        var memberId = results[1].id;
+
+        // Save the note content
+        var savePromise = t.set('card', 'shared', 'hiddenNote', content);
+
+        // If no creator yet, set current user as creator
+        if (!existingCreator) {
+          savePromise = savePromise.then(function() {
+            return t.set('card', 'shared', 'noteCreator', memberId);
+          });
+        }
+
+        return savePromise;
+      }).then(function() {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
         saveBtn.classList.add('saved');
