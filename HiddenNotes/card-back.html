@@ -1,37 +1,200 @@
-<script src="https://p.trellocdn.com/power-up.min.js"></script>
-<script src="https://cdn.tiny.cloud/1/YOUR_TINYMCE_KEY/tinymce/6/tinymce.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hidden Notes</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <!-- TinyMCE CDN - No API key needed for self-hosted usage -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-<div id="editor-container">
-  <textarea id="note-editor"></textarea>
-  <button onclick="saveNote()">Save</button>
-  <button onclick="changePermission()">Change Permission</button>
-</div>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      padding: 8px;
+    }
 
-<script>
-var t = TrelloPowerUp.iframe();
+    #editor-wrapper {
+      border: 2px solid #4f86f7;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
 
-// Load existing note
-t.get('card', 'shared', 'hiddenNote').then(function(note) {
-  tinymce.init({
-    selector: '#note-editor',
-    setup: function(editor) {
-      editor.on('init', function() {
-        editor.setContent(note || '');
+    /* TinyMCE container styling */
+    .tox-tinymce {
+      border: none !important;
+      border-radius: 0 !important;
+    }
+
+    #bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-top: 1px solid #e0e0e0;
+      background: #f8f9fa;
+    }
+
+    #change-permission-btn {
+      background: #f6c042;
+      color: #333;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #change-permission-btn:hover {
+      background: #e6b030;
+    }
+
+    #save-btn {
+      background: #b3c5e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 7px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #save-btn:hover {
+      background: #4f86f7;
+    }
+
+    #save-btn.saved {
+      background: #61bd4f;
+    }
+
+    #status-msg {
+      font-size: 12px;
+      color: #61bd4f;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    #status-msg.show {
+      opacity: 1;
+    }
+
+    #loading {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading">Loading editor...</div>
+
+  <div id="editor-wrapper" style="display:none;">
+    <textarea id="note-editor"></textarea>
+
+    <div id="bottom-bar">
+      <button id="change-permission-btn" onclick="openPermissions()">
+        🔒 Change Permission
+      </button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="status-msg">✓ Saved!</span>
+        <button id="save-btn" onclick="saveNote()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var t = TrelloPowerUp.iframe();
+    var editorReady = false;
+
+    // Initialize TinyMCE
+    tinymce.init({
+      selector: '#note-editor',
+      height: 220,
+      menubar: true,
+      plugins: [
+        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+      ],
+      toolbar:
+        'undo redo | bold italic underline | forecolor backcolor | ' +
+        'alignleft aligncenter alignright alignjustify | ' +
+        'image link | emoticons | more',
+      toolbar_mode: 'wrap',
+      skin: 'oxide',
+      content_css: 'default',
+      branding: false,
+      statusbar: false,
+      resize: false,
+      setup: function(editor) {
+        editor.on('init', function() {
+          editorReady = true;
+
+          // Load saved note content
+          t.get('card', 'shared', 'hiddenNote').then(function(note) {
+            editor.setContent(note || '');
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('editor-wrapper').style.display = 'block';
+
+            // Resize the Trello iframe to fit content
+            t.sizeTo('#editor-wrapper').catch(function() {});
+          });
+        });
+      }
+    });
+
+    // Save the note back to Trello card data
+    function saveNote() {
+      if (!editorReady) return;
+
+      var content = tinymce.get('note-editor').getContent();
+      var saveBtn = document.getElementById('save-btn');
+      var statusMsg = document.getElementById('status-msg');
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      t.set('card', 'shared', 'hiddenNote', content).then(function() {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        saveBtn.classList.add('saved');
+        statusMsg.classList.add('show');
+
+        setTimeout(function() {
+          saveBtn.classList.remove('saved');
+          statusMsg.classList.remove('show');
+        }, 2000);
+      }).catch(function(err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        alert('Error saving note. Please try again.');
+        console.error(err);
       });
     }
-  });
-});
 
-function saveNote() {
-  var content = tinymce.get('note-editor').getContent();
-  t.set('card', 'shared', 'hiddenNote', content);
-}
-
-function changePermission() {
-  t.popup({
-    title: 'Change Permission',
-    url: './permission.html',
-    height: 300
-  });
-}
-</script>
+    // Open the Change Permission popup
+    function openPermissions() {
+      t.popup({
+        title: 'Change Permission',
+        url: './permission.html',
+        height: 350
+      });
+    }
+  </script>
+</body>
+</html>

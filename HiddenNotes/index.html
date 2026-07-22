@@ -1,16 +1,54 @@
-<script src="https://p.trellocdn.com/power-up.min.js"></script>
-<script>
-  TrelloPowerUp.initialize({
-    'card-back-section': function(t, options) {
-      return {
-        title: 'Hidden Notes',
-        icon: 'https://yourhost.com/icon.png',
-        content: {
-          type: 'iframe',
-          url: t.signUrl('./card-back.html'),
-          height: 300
-        }
-      };
-    }
-  });
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hidden Notes Power-Up</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+  <script>
+    var BASE_URL = window.location.origin + window.location.pathname.replace('index.html', '');
+
+    TrelloPowerUp.initialize({
+
+      // Adds a section to the back of every card
+      'card-back-section': function(t, options) {
+        // Check if the current member has permission to see notes
+        return t.get('card', 'shared', 'notePermissions').then(function(perms) {
+          return t.member('id').then(function(member) {
+            var memberId = member.id;
+
+            // If no permissions set yet, everyone can see it
+            // If permissions are set, only allowed members can see it
+            var hasAccess = !perms || perms.length === 0 || perms.includes(memberId);
+
+            if (!hasAccess) {
+              return {
+                title: 'Hidden Notes',
+                icon: BASE_URL + 'icon.svg',
+                content: {
+                  type: 'iframe',
+                  url: t.signUrl(BASE_URL + 'no-access.html'),
+                  height: 60
+                }
+              };
+            }
+
+            return {
+              title: 'Hidden Notes',
+              icon: BASE_URL + 'icon.svg',
+              content: {
+                type: 'iframe',
+                url: t.signUrl(BASE_URL + 'card-back.html'),
+                height: 320
+              }
+            };
+          });
+        });
+      }
+
+    });
+  </script>
+</body>
+</html>

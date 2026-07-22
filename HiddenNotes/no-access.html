@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>No Access</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff8f0;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 4px solid #f6c042;
+      border-radius: 4px;
+    }
+    .icon { font-size: 20px; }
+    .msg {
+      font-size: 13px;
+      color: #666;
+    }
+    .msg strong { color: #333; }
+  </style>
+</head>
+<body>
+  <div class="icon">🔒</div>
+  <div class="msg">
+    <strong>Hidden Notes</strong> — You don't have permission to view this note.
+  </div>
+  <script>
+    var t = TrelloPowerUp.iframe();
+    t.sizeTo('body').catch(function() {});
+  </script>
+</body>
+</html>
