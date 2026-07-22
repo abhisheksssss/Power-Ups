@@ -160,11 +160,24 @@ html {
         editor.on('init', function() {
           editorReady = true;
 
-          // Load saved note content
-          t.get('card', 'shared', 'hiddenNote').then(function(note) {
+          // Load saved note content and creator info
+          Promise.all([
+            t.get('card', 'shared', 'hiddenNote'),
+            t.get('card', 'shared', 'noteCreator'),
+            t.member('id')
+          ]).then(function(results) {
+            var note = results[0];
+            var creatorId = results[1];
+            var currentUserId = results[2].id;
+
             editor.setContent(note || '');
             document.getElementById('loading').style.display = 'none';
             document.getElementById('editor-wrapper').style.display = 'block';
+
+            // Hide the "Change Permission" button if the current user is not the creator
+            if (creatorId && currentUserId !== creatorId) {
+              document.getElementById('change-permission-btn').style.display = 'none';
+            }
 
             // Resize the Trello iframe to fit content
             t.sizeTo('#editor-wrapper').catch(function() {});
