@@ -1,0 +1,16 @@
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<script>
+  TrelloPowerUp.initialize({
+    'card-back-section': function(t, options) {
+      return {
+        title: 'Hidden Notes',
+        icon: 'https://yourhost.com/icon.png',
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./card-back.html'),
+          height: 300
+        }
+      };
+    }
+  });
+</script>

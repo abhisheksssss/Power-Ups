@@ -1,0 +1,29 @@
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<div>
+  <input type="text" placeholder="Search Members..." />
+  <div id="member-list"></div>
+  <button onclick="savePermissions()">SAVE</button>
+</div>
+
+<script>
+var t = TrelloPowerUp.iframe();
+
+// Load board members
+t.board('members').then(function(board) {
+  t.get('card', 'shared', 'notePermissions').then(function(perms) {
+    var allowed = perms || [];
+    board.members.forEach(function(member) {
+      var checked = allowed.includes(member.id);
+      // Render checkbox list...
+    });
+  });
+});
+
+function savePermissions() {
+  var selected = [...document.querySelectorAll('input:checked')]
+    .map(el => el.value);
+  t.set('card', 'shared', 'notePermissions', selected).then(function() {
+    t.closePopup();
+  });
+}
+</script>
