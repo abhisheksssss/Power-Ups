@@ -193,15 +193,20 @@
     var allMembers = [];      // All board members
     var selectedIds = [];     // Currently selected (allowed) member IDs
 
-    // Load board members + existing permissions
+    // Load board members, existing permissions, and the note creator
     Promise.all([
       t.board('members'),
-      t.get('card', 'shared', 'notePermissions')
+      t.get('card', 'shared', 'notePermissions'),
+      t.get('card', 'shared', 'noteCreator')
     ]).then(function(results) {
       var board = results[0];
       var perms = results[1];
+      var creator = results[2];
 
-      allMembers = board.members || [];
+      var members = board.members || [];
+      // Filter out the creator so they don't show up in the permission list
+      allMembers = members.filter(function(m) { return m.id !== creator; });
+      
       selectedIds = perms || [];
 
       renderMembers(allMembers);
