@@ -15,25 +15,25 @@
     }
 
     ::-webkit-scrollbar {
-    display: none;
-}
+      display: none;
+    }
 
-html {
-    scrollbar-width: none;
-}
+    html {
+      scrollbar-width: none;
+    }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: transparent;
       padding: 8px;
-       -ms-overflow-style: none;
-
+      -ms-overflow-style: none;
     }
 
     #editor-wrapper {
       border-radius: 6px;
       overflow: hidden;
       background: transparent;
+      position: relative;
     }
 
     /* TinyMCE container styling */
@@ -57,7 +57,6 @@ html {
       color: #333;
       border: none;
       border-radius: 4px;
-      padding: 6px 12px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
@@ -76,7 +75,6 @@ html {
       color: #312E7C;
       border: none;
       border-radius: 4px;
-      padding: 7px 22px;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
@@ -109,6 +107,149 @@ html {
       color: #999;
       font-size: 13px;
     }
+
+    /* Modal styles */
+    #permission-modal {
+      display: none;
+      position: absolute;
+      top: 50px; 
+      right: 10px;
+      width: 280px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      border: 1px solid #ddd;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    #search-container {
+      background: #e8f5e9;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    #search-container::before {
+      content: '';
+      width: 2px;
+      height: 18px;
+      background: #333;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      color: #333;
+    }
+
+    #search-input::placeholder {
+      color: #8bc78b;
+      font-weight: 500;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    #member-list {
+      list-style: none;
+      margin-bottom: 18px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    #member-list li {
+      display: flex;
+      align-items: center;
+      padding: 10px 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-radius: 6px;
+    }
+
+    #member-list li:hover {
+      background: #f5f5f5;
+    }
+
+    .member-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid #ccc;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      background: #e0e0e0;
+    }
+
+    .member-checkbox.checked {
+      background: #4caf50;
+      border-color: #4caf50;
+    }
+
+    .member-checkbox.checked::after {
+      content: '✓';
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .member-name {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .no-members {
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+      padding: 20px 0;
+    }
+
+    #save-bar {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    #modal-save-btn {
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+
+    #modal-save-btn:hover {
+      background: #43a047;
+    }
+
+    #modal-save-btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -117,10 +258,23 @@ html {
 
   <div id="editor-wrapper" style="display:none;">
     <div style="display: flex; justify-content: flex-end; padding: 8px 8px 8px 0;">
-      <button id="change-permission-btn" onclick="openPermissions(event)">
+      <button id="change-permission-btn" onclick="togglePermissions()">
         Change Permission
       </button>
     </div>
+    
+    <!-- Modal -->
+    <div id="permission-modal">
+      <div id="search-container">
+        <input type="text" id="search-input" placeholder="Search Members" oninput="filterMembers()" />
+      </div>
+      <p class="section-title">Board Members</p>
+      <ul id="member-list"></ul>
+      <div id="save-bar">
+        <button id="modal-save-btn" onclick="savePermissions()">SAVE</button>
+      </div>
+    </div>
+
     <textarea id="note-editor"></textarea>
 
     <div id="bottom-bar">
@@ -134,22 +288,23 @@ html {
   <script>
     var t = TrelloPowerUp.iframe();
     var editorReady = false;
+    var allMembers = [];      // All board members
+    var selectedIds = [];     // Currently selected (allowed) member IDs
 
     // Initialize TinyMCE
     tinymce.init({
       selector: '#note-editor',
       height: 260,
       menubar: 'file edit insert format table help',
-    plugins: [
-    'image',
-    'link',
-    'table',
-    'codesample',
-    'emoticons',
-    'help'
-],
-     toolbar:
-'undo redo | bold italic | forecolor backcolor | align | image emoticons',
+      plugins: [
+        'image',
+        'link',
+        'table',
+        'codesample',
+        'emoticons',
+        'help'
+      ],
+      toolbar: 'undo redo | bold italic | forecolor backcolor | align | image emoticons',
       toolbar_mode: 'wrap',
       skin: 'oxide',
       content_css: 'default',
@@ -165,11 +320,22 @@ html {
           Promise.all([
             t.get('card', 'shared', 'hiddenNote'),
             t.get('card', 'shared', 'noteCreator'),
-            t.member('id')
+            t.member('id'),
+            t.board('members'),
+            t.get('card', 'shared', 'notePermissions')
           ]).then(function(results) {
             var note = results[0];
             var creatorId = results[1];
             var currentUserId = results[2].id;
+            var board = results[3];
+            var perms = results[4];
+
+            var members = board.members || [];
+            // Filter out the creator so they don't show up in the permission list
+            allMembers = members.filter(function(m) { return m.id !== creatorId; });
+            selectedIds = perms || [];
+
+            renderMembers(allMembers);
 
             editor.setContent(note || '');
             document.getElementById('loading').style.display = 'none';
@@ -235,13 +401,91 @@ html {
       });
     }
 
-    // Open the Change Permission popup
-    function openPermissions(e) {
-      t.popup({
-        title: 'Change Permission',
-        url: './permission.html',
-        height: 350,
-        mouseEvent: e
+    // Toggle Modal
+    function togglePermissions() {
+      var modal = document.getElementById('permission-modal');
+      if (modal.style.display === 'block') {
+        modal.style.display = 'none';
+      } else {
+        modal.style.display = 'block';
+      }
+    }
+
+    // Render member list
+    function renderMembers(members) {
+      var list = document.getElementById('member-list');
+      list.innerHTML = '';
+
+      if (members.length === 0) {
+        list.innerHTML = '<li class="no-members">No members found.</li>';
+        return;
+      }
+
+      members.forEach(function(member) {
+        var isChecked = selectedIds.includes(member.id);
+
+        var li = document.createElement('li');
+        li.setAttribute('data-id', member.id);
+        li.setAttribute('data-name', (member.fullName || member.username || '').toLowerCase());
+        li.onclick = function() { toggleMember(member.id, li); };
+
+        // Checkbox
+        var checkbox = document.createElement('div');
+        checkbox.className = 'member-checkbox' + (isChecked ? ' checked' : '');
+        checkbox.id = 'chk-' + member.id;
+
+        // Name
+        var nameEl = document.createElement('span');
+        nameEl.className = 'member-name';
+        nameEl.textContent = member.fullName || member.username || 'Unknown';
+
+        li.appendChild(checkbox);
+        li.appendChild(nameEl);
+        list.appendChild(li);
+      });
+    }
+
+    // Toggle a member's selected state
+    function toggleMember(memberId, li) {
+      var idx = selectedIds.indexOf(memberId);
+      var checkbox = document.getElementById('chk-' + memberId);
+
+      if (idx === -1) {
+        selectedIds.push(memberId);
+        if (checkbox) checkbox.classList.add('checked');
+      } else {
+        selectedIds.splice(idx, 1);
+        if (checkbox) checkbox.classList.remove('checked');
+      }
+    }
+
+    // Filter visible members by search text
+    function filterMembers() {
+      var query = document.getElementById('search-input').value.toLowerCase();
+      var items = document.querySelectorAll('#member-list li[data-name]');
+
+      items.forEach(function(item) {
+        var name = item.getAttribute('data-name') || '';
+        item.style.display = name.includes(query) ? '' : 'none';
+      });
+    }
+
+    // Save permissions and close modal
+    function savePermissions() {
+      var btn = document.getElementById('modal-save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      t.set('card', 'shared', 'notePermissions', selectedIds).then(function() {
+        btn.disabled = false;
+        btn.textContent = 'SAVE';
+        // Close modal automatically on successful save
+        document.getElementById('permission-modal').style.display = 'none';
+      }).catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = 'SAVE';
+        alert('Error saving permissions. Try again.');
+        console.error(err);
       });
     }
   </script>
