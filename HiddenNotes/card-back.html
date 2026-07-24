@@ -7,6 +7,8 @@
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <!-- TinyMCE CDN - No API key needed for self-hosted usage -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+  <!-- LZ-String CDN for compression -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -384,11 +386,20 @@
             t.board('members'),
             t.get('card', 'shared', 'notePermissions')
           ]).then(function(results) {
-            var note = results[0];
+            var rawNote = results[0] || '';
             var creatorId = results[1];
             var currentUserId = results[2].id;
             var board = results[3];
             var perms = results[4];
+
+            var note = '';
+            if (rawNote) {
+              try {
+                note = LZString.decompressFromBase64(rawNote) || LZString.decompressFromUTF16(rawNote) || rawNote;
+              } catch (e) {
+                note = rawNote;
+              }
+            }
 
             var members = board.members || [];
             // Filter out the creator so they don't show up in the permission list
@@ -421,9 +432,12 @@
       var saveBtn = document.getElementById('save-btn');
       var statusMsg = document.getElementById('status-msg');
 
+      // Compress content using LZ-String
+      var compressedContent = LZString.compressToBase64(content);
+
       // Trello limits shared plugin data to 4096 characters per card
-      if (content.length > 3900) {
-        alert('Note content is too large (' + content.length + ' characters). Trello limits card data to 4,096 characters total. Please remove large images or shorten the text.');
+      if (compressedContent.length > 3900) {
+        alert('Note content is too large even after compression (Compressed size: ' + compressedContent.length + ' / 4,096 chars). Please remove large images or shorten the text.');
         return;
       }
 
@@ -438,8 +452,8 @@
         var existingCreator = results[0];
         var memberId = results[1].id;
 
-        // Save the note content
-        var savePromise = t.set('card', 'shared', 'hiddenNote', content);
+        // Save the compressed note content
+        var savePromise = t.set('card', 'shared', 'hiddenNote', compressedContent);
 
         // If no creator yet, set current user as creator
         if (!existingCreator) {
