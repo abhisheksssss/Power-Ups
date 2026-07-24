@@ -355,7 +355,7 @@
       images_upload_handler: function (blobInfo, progress) {
         return new Promise(function (resolve, reject) {
           var file = blobInfo.blob();
-          compressAndResizeImage(file, 250, 0.5, function(compressedDataUrl) {
+          compressAndResizeImage(file, 150, 0.3, function(compressedDataUrl) {
             resolve(compressedDataUrl);
           });
         });
@@ -367,7 +367,7 @@
           input.setAttribute('accept', 'image/*');
           input.onchange = function () {
             var file = this.files[0];
-            compressAndResizeImage(file, 250, 0.5, function(compressedDataUrl) {
+            compressAndResizeImage(file, 150, 0.3, function(compressedDataUrl) {
               cb(compressedDataUrl, { title: file.name });
             });
           };
@@ -436,7 +436,7 @@
       var compressedContent = LZString.compressToBase64(content);
 
       // Trello limits shared plugin data to 4096 characters per card
-      if (compressedContent.length > 3900) {
+      if (compressedContent.length > 4000) {
         alert('Note content is too large even after compression (Compressed size: ' + compressedContent.length + ' / 4,096 chars). Please remove large images or shorten the text.');
         return;
       }
