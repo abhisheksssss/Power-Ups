@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hidden Notes</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <!-- TinyMCE CDN - No API key needed for self-hosted usage -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
-  <!-- LZ-String CDN for compression -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -114,12 +113,12 @@
     #permission-modal {
       display: none;
       position: absolute;
-      top: 50px; 
+      top: 50px;
       right: 10px;
       width: 280px;
       background: #fff;
       border-radius: 8px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
       border: 1px solid #ddd;
       padding: 16px;
       z-index: 1000;
@@ -254,6 +253,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div id="loading">Loading editor...</div>
@@ -264,7 +264,7 @@
         Change Permission
       </button>
     </div>
-    
+
     <!-- Modal -->
     <div id="permission-modal">
       <div id="search-container">
@@ -293,41 +293,6 @@
     var allMembers = [];      // All board members
     var selectedIds = [];     // Currently selected (allowed) member IDs
 
-    // Helper to resize & compress image files to base64 so they fit within Trello's storage limits
-    function compressAndResizeImage(file, maxDimension, quality, callback) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var img = new Image();
-        img.onload = function() {
-          var canvas = document.createElement('canvas');
-          var width = img.width;
-          var height = img.height;
-
-          if (width > height) {
-            if (width > maxDimension) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            }
-          } else {
-            if (height > maxDimension) {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          var dataUrl = canvas.toDataURL('image/jpeg', quality);
-          callback(dataUrl);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
     // Initialize TinyMCE
     tinymce.init({
       selector: '#note-editor',
@@ -349,33 +314,8 @@
       promotion: false,
       statusbar: false,
       resize: false,
-      image_title: true,
-      automatic_uploads: true,
-      file_picker_types: 'image',
-      images_upload_handler: function (blobInfo, progress) {
-        return new Promise(function (resolve, reject) {
-          var file = blobInfo.blob();
-          compressAndResizeImage(file, 150, 0.3, function(compressedDataUrl) {
-            resolve(compressedDataUrl);
-          });
-        });
-      },
-      file_picker_callback: function (cb, value, meta) {
-        if (meta.filetype === 'image') {
-          var input = document.createElement('input');
-          input.setAttribute('type', 'file');
-          input.setAttribute('accept', 'image/*');
-          input.onchange = function () {
-            var file = this.files[0];
-            compressAndResizeImage(file, 150, 0.3, function(compressedDataUrl) {
-              cb(compressedDataUrl, { title: file.name });
-            });
-          };
-          input.click();
-        }
-      },
-      setup: function(editor) {
-        editor.on('init', function() {
+      setup: function (editor) {
+        editor.on('init', function () {
           editorReady = true;
 
           // Load saved note content and creator info
@@ -385,25 +325,16 @@
             t.member('id'),
             t.board('members'),
             t.get('card', 'shared', 'notePermissions')
-          ]).then(function(results) {
-            var rawNote = results[0] || '';
+          ]).then(function (results) {
+            var note = results[0];
             var creatorId = results[1];
             var currentUserId = results[2].id;
             var board = results[3];
             var perms = results[4];
 
-            var note = '';
-            if (rawNote) {
-              try {
-                note = LZString.decompressFromBase64(rawNote) || LZString.decompressFromUTF16(rawNote) || rawNote;
-              } catch (e) {
-                note = rawNote;
-              }
-            }
-
             var members = board.members || [];
             // Filter out the creator so they don't show up in the permission list
-            allMembers = members.filter(function(m) { return m.id !== creatorId; });
+            allMembers = members.filter(function (m) { return m.id !== creatorId; });
             selectedIds = perms || [];
 
             renderMembers(allMembers);
@@ -418,7 +349,7 @@
             }
 
             // Resize the Trello iframe to fit content
-            t.sizeTo('#editor-wrapper').catch(function() {});
+            t.sizeTo('#editor-wrapper').catch(function () { });
           });
         });
       }
@@ -432,15 +363,6 @@
       var saveBtn = document.getElementById('save-btn');
       var statusMsg = document.getElementById('status-msg');
 
-      // Compress content using LZ-String
-      var compressedContent = LZString.compressToBase64(content);
-
-      // Trello limits shared plugin data to 4096 characters per card
-      if (compressedContent.length > 4000) {
-        alert('Note content is too large even after compression (Compressed size: ' + compressedContent.length + ' / 4,096 chars). Please remove large images or shorten the text.');
-        return;
-      }
-
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
 
@@ -448,37 +370,36 @@
       Promise.all([
         t.get('card', 'shared', 'noteCreator'),
         t.member('id')
-      ]).then(function(results) {
+      ]).then(function (results) {
         var existingCreator = results[0];
         var memberId = results[1].id;
 
-        // Save the compressed note content
-        var savePromise = t.set('card', 'shared', 'hiddenNote', compressedContent);
+        // Save the note content
+        var savePromise = t.set('card', 'shared', 'hiddenNote', content);
 
         // If no creator yet, set current user as creator
         if (!existingCreator) {
-          savePromise = savePromise.then(function() {
+          savePromise = savePromise.then(function () {
             return t.set('card', 'shared', 'noteCreator', memberId);
           });
         }
 
         return savePromise;
-      }).then(function() {
+      }).then(function () {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
         saveBtn.classList.add('saved');
         statusMsg.classList.add('show');
 
-        setTimeout(function() {
+        setTimeout(function () {
           saveBtn.classList.remove('saved');
           statusMsg.classList.remove('show');
         }, 2000);
-      }).catch(function(err) {
+      }).catch(function (err) {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
-        var errMsg = (err && err.message) ? err.message : String(err);
-        alert('Error saving note: ' + errMsg);
-        console.error('Save note error:', err);
+        alert('Error saving note. Please try again.');
+        console.error(err);
       });
     }
 
@@ -502,13 +423,13 @@
         return;
       }
 
-      members.forEach(function(member) {
+      members.forEach(function (member) {
         var isChecked = selectedIds.includes(member.id);
 
         var li = document.createElement('li');
         li.setAttribute('data-id', member.id);
         li.setAttribute('data-name', (member.fullName || member.username || '').toLowerCase());
-        li.onclick = function() { toggleMember(member.id, li); };
+        li.onclick = function () { toggleMember(member.id, li); };
 
         // Checkbox
         var checkbox = document.createElement('div');
@@ -545,7 +466,7 @@
       var query = document.getElementById('search-input').value.toLowerCase();
       var items = document.querySelectorAll('#member-list li[data-name]');
 
-      items.forEach(function(item) {
+      items.forEach(function (item) {
         var name = item.getAttribute('data-name') || '';
         item.style.display = name.includes(query) ? '' : 'none';
       });
@@ -557,12 +478,12 @@
       btn.disabled = true;
       btn.textContent = 'Saving...';
 
-      t.set('card', 'shared', 'notePermissions', selectedIds).then(function() {
+      t.set('card', 'shared', 'notePermissions', selectedIds).then(function () {
         btn.disabled = false;
         btn.textContent = 'SAVE';
         // Close modal automatically on successful save
         document.getElementById('permission-modal').style.display = 'none';
-      }).catch(function(err) {
+      }).catch(function (err) {
         btn.disabled = false;
         btn.textContent = 'SAVE';
         alert('Error saving permissions. Try again.');
@@ -571,4 +492,5 @@
     }
   </script>
 </body>
+
 </html>
